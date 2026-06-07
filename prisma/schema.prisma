@@ -1,0 +1,414 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 量具設備主檔
+model Gage {
+  id               String   @id // 管理編號 (儀器設備編號)
+  name             String   // 設備名稱 (儀器設備名稱)
+  spec             String?  // 規格/廠牌 (廠牌)
+  category         String   // 類別 (儀器類別) - 舊有字串欄位
+  categoryId       String?  // 類別關聯
+  categoryRef      GageCategory? @relation(fields: [categoryId], references: [id])
+  precision        String?  // 精度
+  usageRange       String?  // 使用範圍
+  calPoints        String?  // 校正點
+  acceptance       String?  // 允收標準 (保留文字備註)
+  standardId       String?  // 關聯標準庫
+  acceptanceStandard AcceptanceStandard? @relation(fields: [standardId], references: [id])
+  tafLogo          String?  // TAF Logo
+  entryDate        DateTime? // 入廠日期
+  
+  // 組織架構 (新版關聯)
+  locationId       String?
+  locationRef      Location?   @relation(fields: [locationId], references: [id], name: "GageLocation")
+  
+  // 保管部門
+  departmentId     String?
+  departmentRef    Department? @relation(fields: [departmentId], references: [id], name: "GageDepartment")
+  
+  // 保管人 (Custodian)
+  custodianId      String?
+  custodianRef     Staff?      @relation(fields: [custodianId], references: [id], name: "GageCustodian")
+
+  // 管理人 (Manager)
+  managerId        String?
+  managerRef       Staff?      @relation(fields: [managerId], references: [id], name: "GageManager")
+
+  // 供應商 (Vendor)
+  vendorId         String?
+  vendorRef        Vendor?     @relation(fields: [vendorId], references: [id])
+
+  // 舊有欄位 (保留相容性)
+  manager          String?  // 管理者
+  calType          String?  // 校正類別
+  calibrationCycle Int      // 校正週期 (單位：月)
+  notes            String?  // 備註
+  capacity         String?  // 設備能力範圍
+  lastCalDate      DateTime // 上次校正日期
+  actualCalDate    DateTime? // 實際校正日期
+  nextCalDate      DateTime // 下次校正日期
+  nextCalMonth     String?  // 下次校正日 (下次校正月)
+  extReport        String?  // 外校報告
+  calDate2025      String?  // 2025年校正日
+  calVendor2025    String?  // 2025年校正商
+  location         String   @default("Chennai") // 廠區 (印度/台灣)
+  department       String?  // 部門
+  status           String   @default("IN_USE") 
+  deletedAt        DateTime? // 軟刪除支援
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  records          CalibrationRecord[]
+
+  @@index([nextCalDate])
+  @@index([status])
+  @@index([category])
+  @@index([locationId])
+  @@index([departmentId])
+}
+
+// 2. 允收標準庫 (主檔)
+model AcceptanceStandard {
+  id            String   @id @default(cuid())
+  name          String   // 標準名稱
+  description   String?  // 詳細說明
+  defaultPoints String?  // 建議校正點位 (保留簡單參考)
+  type          String   @default("FIXED") // FIXED, STEPPED
+  targetCategory String? // 綁定的儀器類別
+  defaultCycle   Int?    // 預設校正週期 (月)
+  defaultPrecision String? // 預設精度
+  criteria      AcceptanceCriterion[]
+  points        AcceptancePoints[]
+  gages         Gage[]
+  fixtures      Fixture[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+}
+
+model AcceptancePoints {
+  id            String             @id @default(cuid())
+  standardId    String
+  standard      AcceptanceStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  category      String             // 項目類別 (例如：外徑, 內徑)
+  points        String             // 點位 (例如：0, 25, 50)
+  unit          String?            // 單位 (例如：mm, inch)
+}
+
+// 3. 允收標準明細
+model AcceptanceCriterion {
+  id            String             @id @default(cuid())
+  standardId    String
+  standard      AcceptanceStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  category      String?            // 項目類別 (例如：外徑, 內徑)
+  rangeStart    Float?             // 範圍起點
+  rangeEnd      Float?             // 範圍終點
+  tolerancePlus Float              // 上偏差 (+)
+  toleranceMinus Float             // 下偏差 (-)
+  unit          String?            // 單位
+}
+
+// 4. 校正歷史流水帳
+model CalibrationRecord {
+  id            String   @id @default(cuid())
+  gageId        String
+  gage          Gage     @relation(fields: [gageId], references: [id], onDelete: Cascade)
+  calDate       DateTime // 實際校驗日期
+  result        String   // 最終判定: PASS, FAIL
+  certificateNo String?  // 報告編號
+  inspector     String   // 校驗人員
+  reportType    String?  // 報告類別: INTERNAL, EXTERNAL
+  notes         String?  // 備註
+  status        String   @default("APPROVED") // DRAFT, PENDING, APPROVED, REJECTED
+  reviewer      String?  // 審核主管
+  reviewDate    DateTime?
+  reviewNotes   String?
+  vendorId      String?
+  vendor        Vendor?  @relation(fields: [vendorId], references: [id])
+  cost          Float?   // 校正費用
+  batchId       String?
+  batch         CalibrationBatch? @relation(fields: [batchId], references: [id])
+  attachmentUrl String?  // 報告附件下載連結
+  details       CalibrationDetail[]
+  updatedAt     DateTime @default(now()) @updatedAt
+  deletedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([calDate])
+  @@index([gageId])
+  @@index([result])
+  @@index([deletedAt])
+}
+
+// 5. 校正數據明細 (內校使用)
+model CalibrationDetail {
+  id        String            @id @default(cuid())
+  recordId  String
+  record    CalibrationRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  category  String?           // 項目類別 (例如：外徑, 內徑)
+  point     String            // 校正點 (標稱值)
+  standard  Float?            // 標準值
+  lowerLimit Float?           // 下限
+  upperLimit Float?           // 上限
+  actual    Float?            // 實測值
+  error     Float?            // 誤差值
+  result    String?           // 單點判定: PASS, FAIL
+}
+
+// 6. 校正廠商
+model Vendor {
+  id        String   @id @default(cuid())
+  vendorCode String? // 廠商代碼
+  name      String   // 廠商名稱
+  shortName String?  // 廠商簡稱
+  type      String   @default("OUTSOURCE") // OUTSOURCE | CALIBRATION
+  contact   String?  // 聯絡人
+  phone     String?  // 電話
+  mobile    String?  // 行動電話
+  fax       String?  // 傳真
+  email     String?  // 電子郵件
+  website   String?  // 網站
+  serviceScope String? // 服務/校正項目
+  address   String?  // 地址
+  notes     String?  // 備註
+  records   CalibrationRecord[]
+  fixtureRecords FixtureCalibrationRecord[]
+  batches   CalibrationBatch[]
+  gages     Gage[]
+  fixtures  Fixture[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+// 7. 批次送校管理
+model CalibrationBatch {
+  id          String   @id @default(cuid())
+  vendorId    String
+  vendor      Vendor   @relation(fields: [vendorId], references: [id])
+  totalCost   Float    // 總費用
+  invoiceNo   String?  // 發票或請款單號
+  status      String   @default("COMPLETED") // DRAFT, COMPLETED
+  notes       String?
+  records     CalibrationRecord[]
+  createdAt   DateTime @default(now())
+  deletedAt   DateTime?
+}
+
+// 8. 提醒規則設定
+model ReminderRule {
+  id          String   @id @default(cuid())
+  type        String   // ALL, CATEGORY, INDIVIDUAL
+  target      String?  // 類別名稱 或 儀器 ID
+  daysBefore  Int      // 0 (當月), 14, 30
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 9. 組織架構管理
+model Location {
+  id          String       @id @default(cuid())
+  name        String       // 廠區名稱 (如：Taiwan, Chennai)
+  departments Department[]
+  gages       Gage[]       @relation("GageLocation")
+  fixtures    Fixture[]    @relation("FixtureLocation")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+}
+
+model Department {
+  id         String   @id @default(cuid())
+  name       String   // 部門名稱
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  staff      Staff[]
+  gages      Gage[]   @relation("GageDepartment")
+  fixtures   Fixture[] @relation("FixtureDepartment")
+  defaultCustodianId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+}
+
+model Staff {
+  id           String     @id @default(cuid())
+  name         String     // 姓名
+  staffId      String?    // 工號
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  
+  // 關聯
+  custodianGages Gage[]   @relation("GageCustodian")
+  managedGages   Gage[]   @relation("GageManager")
+  custodianFixtures Fixture[] @relation("FixtureCustodian")
+  managedFixtures Fixture[]   @relation("FixtureManager")
+  rdIssuedFixtures Fixture[]  @relation("FixtureRDIssuer")
+  isDefaultInspector Boolean @default(false)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+}
+
+// 10. 系統日誌 (稽核日誌)
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, EXPORT
+  module    String   // GAGE, CALIBRATION, ORG, STANDARD, VENDOR
+  targetId  String?  // 被操作物件的 ID
+  content   String   // 操作內容描述 (JSON string)
+  userId    String?  // 執行人員
+  userName  String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([module])
+  @@index([action])
+  @@index([createdAt])
+}
+// 11. 儀器類別管理
+model GageCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  gages       Gage[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+// 12. 系統使用者管理 (RBAC)
+model User {
+  id           String   @id @default(cuid())
+  account      String   @unique // 登入帳號
+  passwordHash String   // 加密後的密碼 (Bcrypt)
+  role         String   // 角色: ADMIN, QA_MANAGER, ENGINEER
+  name         String   // 使用者姓名
+  isActive     Boolean  @default(true) // 帳號是否啟用
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// 13. 檢具主檔
+model Fixture {
+  id               String   @id // 儀器設備編號
+  name             String   // 儀器設備名稱
+  brand            String?  // 廠牌
+  serialNo         String?  // 版次/序號 (例如: (1))
+  applicablePart   String?  // 適用料號
+  drawingNo        String?  // 對應圖號 / 檢驗書
+  precision        String?  // 精度
+  displayType      String?  // 顯示 (例如: 顯示儀, 刻度盤)
+  
+  category         String?  // 類別 (若檢具也分類)
+  calPoints        String?  // 校正點位 (例如: FAI尺寸)
+  acceptance       String?  // 允收標準 (文字備註)
+  standardId       String?  // 關聯標準庫
+  acceptanceStandard AcceptanceStandard? @relation(fields: [standardId], references: [id])
+  tafLogo          String?  // TAF Logo
+  entryDate        DateTime? // 入廠日期 (即 RD發行日期)
+  manual           String?  // 使用說明書
+  
+  // 組織架構
+  locationId       String?
+  locationRef      Location?   @relation(fields: [locationId], references: [id], name: "FixtureLocation")
+  
+  // 保管部門
+  departmentId     String?
+  departmentRef    Department? @relation(fields: [departmentId], references: [id], name: "FixtureDepartment")
+  
+  // 保管人
+  custodianId      String?
+  custodianRef     Staff?      @relation(fields: [custodianId], references: [id], name: "FixtureCustodian")
+
+  // 管理人
+  managerId        String?
+  managerRef       Staff?      @relation(fields: [managerId], references: [id], name: "FixtureManager")
+
+  // RD發行人
+  rdIssuerId       String?
+  rdIssuerRef      Staff?      @relation(fields: [rdIssuerId], references: [id], name: "FixtureRDIssuer")
+
+  // 供應商
+  vendorId         String?
+  vendorRef        Vendor?     @relation(fields: [vendorId], references: [id])
+
+  // 舊有欄位 (保留相容性)
+  manager          String?  // 管理者
+  calType          String?  // 校正類別
+  calibrationCycle Int      // 校正週期 (單位：月)
+  notes            String?  // 備註
+  lastCalDate      DateTime // 上次校正日期
+  actualCalDate    DateTime? // 實際校正日期
+  nextCalDate      DateTime // 下次校正日期
+  nextCalMonth     String?  // 下次校正月
+  status           String   @default("IN_USE") 
+  deletedAt        DateTime? 
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  records          FixtureCalibrationRecord[]
+
+  @@index([nextCalDate])
+  @@index([status])
+  @@index([locationId])
+  @@index([departmentId])
+}
+
+// 14. 檢具校正歷史流水帳
+model FixtureCalibrationRecord {
+  id            String   @id @default(cuid())
+  fixtureId     String
+  fixture       Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  calDate       DateTime // 實際校驗日期
+  result        String   // 最終判定: PASS, FAIL
+  certificateNo String?  // 報告編號
+  inspector     String   // 校驗人員
+  reportType    String?  // 報告類別: INTERNAL, EXTERNAL
+  notes         String?  // 備註
+  status        String   @default("APPROVED") // DRAFT, PENDING, APPROVED, REJECTED
+  reviewer      String?  // 審核主管
+  reviewDate    DateTime?
+  reviewNotes   String?
+  vendorId      String?
+  vendor        Vendor?  @relation(fields: [vendorId], references: [id])
+  cost          Float?   // 校正費用
+  attachmentUrl String?  // 報告附件下載連結
+  details       FixtureCalibrationDetail[]
+  updatedAt     DateTime @default(now()) @updatedAt
+  deletedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+
+  @@index([calDate])
+  @@index([fixtureId])
+  @@index([result])
+  @@index([deletedAt])
+}
+
+// 15. 檢具校正數據明細 (內校使用)
+model FixtureCalibrationDetail {
+  id        String            @id @default(cuid())
+  recordId  String
+  record    FixtureCalibrationRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  category  String?           // 項目類別
+  point     String            // 校正點 (標稱值)
+  standard  Float?            // 標準值
+  lowerLimit Float?           // 下限
+  upperLimit Float?           // 上限
+  actual    Float?            // 實測值
+  error     Float?            // 誤差值
+  result    String?           // 單點判定: PASS, FAIL
+}
