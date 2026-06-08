@@ -35,11 +35,16 @@
     "mgmt": "Vendor Management",
     "desc": "Manage external calibration partners.",
     "add": "Add Vendor",
+    "edit": "Edit Vendor",
+    "details": "Vendor Details",
     "name": "Vendor Name",
     "contact": "Contact Person",
     "phone": "Phone",
+    "mobile": "Mobile",
     "email": "Email",
     "address": "Address",
+    "website": "Website",
+    "service_scope": "Service Scope",
     "notes": "Notes",
     "no_data": "No vendor data found"
   }

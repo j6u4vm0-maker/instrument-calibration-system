@@ -11,6 +11,7 @@ import FixtureTable from "@/components/FixtureTable";
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { VendorService } from '@/services/vendor-service';
 import FixtureAddModal from "@/components/FixtureAddModal";
+import { getAllFixtureCategoriesAction } from '@/app/actions/category-actions';
 
 export default async function FixturesPage({
   searchParams,
@@ -27,8 +28,9 @@ export default async function FixturesPage({
   
   const statusParam = typeof params.status === 'string' ? params.status : '';
 
-  const allFixtures = await FixtureService.getAllFixtures();
-  const categories: string[] = []; // Fixtures don't have dedicated categories yet, but we can extract them if needed later
+  const allFixtures: any[] = await FixtureService.getAllFixtures();
+  const fixtureCategories = await getAllFixtureCategoriesAction();
+  const categories = fixtureCategories.map((c: any) => c.name);
   const vendors = await VendorService.getAllVendors();
 
   const filteredFixtures = allFixtures.filter(fixture => {
@@ -36,10 +38,9 @@ export default async function FixturesPage({
                          fixture.name.toLowerCase().includes(query.toLowerCase()) ||
                          (fixture.applicablePart && fixture.applicablePart.toLowerCase().includes(query.toLowerCase()));
                          
-    const matchesLocation = location ? fixture.locationRef?.name === location || fixture.location === location : true;
+    const matchesLocation = location ? (fixture.locationRef?.name || fixture.location) === location : true;
     
-    // For now we skip category filtering for fixtures unless we implement category extraction
-    const matchesCategory = currentCategories.length > 0 ? currentCategories.includes(fixture.category || '') : true;
+    const matchesCategory = currentCategories.length > 0 ? currentCategories.includes(fixture.categoryRef?.name || fixture.category || "") : true;
     
     let matchesStatus = true;
     if (statusParam === 'OVERDUE') {
@@ -79,11 +80,11 @@ export default async function FixturesPage({
             />
           </form>
 
-          {/* <CategoryFilter categories={categories} currentCategories={currentCategories} /> */}
+          <CategoryFilter categories={categories} currentCategories={currentCategories} />
           
 
 
-          <FixtureAddModal allCategories={[]} standards={[]} />
+          <FixtureAddModal />
         </div>
       </header>
 

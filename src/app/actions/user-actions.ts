@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { UserService } from '@/services/user-service';
 import { AuthService } from '@/services/auth-service';
@@ -6,10 +6,11 @@ import { revalidatePath } from 'next/cache';
 
 async function checkAdmin() {
   const session = await AuthService.getSession();
-  if (!session || session.user.role !== 'admin') {
-    throw new Error('權限不足 (Unauthorized)');
+  const user = session?.user as { id: string; role?: string } | undefined;
+  if (!user || user.role !== 'admin') {
+    throw new Error('甈?銝雲 (Unauthorized)');
   }
-  return session.user;
+  return user;
 }
 
 export async function getUsersAction() {
@@ -62,7 +63,7 @@ export async function deleteUserAction(id: string) {
   try {
     const currentUser = await checkAdmin();
     if (currentUser.id === id) {
-      throw new Error('不能刪除自己的帳號');
+      throw new Error('銝?芷?芸楛?董??');
     }
     await UserService.deleteUser(id);
     revalidatePath('/settings/users');
@@ -71,3 +72,4 @@ export async function deleteUserAction(id: string) {
     return { error: error.message };
   }
 }
+

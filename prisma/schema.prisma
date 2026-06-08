@@ -314,6 +314,8 @@ model Fixture {
   displayType      String?  // 顯示 (例如: 顯示儀, 刻度盤)
   
   category         String?  // 類別 (若檢具也分類)
+  categoryId       String?
+  categoryRef      FixtureCategory? @relation(fields: [categoryId], references: [id])
   calPoints        String?  // 校正點位 (例如: FAI尺寸)
   acceptance       String?  // 允收標準 (文字備註)
   standardId       String?  // 關聯標準庫
@@ -365,6 +367,17 @@ model Fixture {
   @@index([status])
   @@index([locationId])
   @@index([departmentId])
+}
+
+// 13b. ????
+model FixtureCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  fixtures    Fixture[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 }
 
 // 14. 檢具校正歷史流水帳

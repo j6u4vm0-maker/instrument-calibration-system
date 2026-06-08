@@ -366,12 +366,10 @@ export default function GageEditModal({ gage }: GageEditModalProps) {
                 type="button"
                 onClick={async () => {
                   if (confirm(t('calibration.gage.confirm_del').replace('{{id}}', gage.id))) {
-                    const res = await deleteGageAction(gage.id);
-                    if (res.success) {
-                      setIsOpen(false);
-                      router.push('/gages');
-                      router.refresh();
-                    }
+                    await deleteGageAction(gage.id);
+                    setIsOpen(false);
+                    router.push('/gages');
+                    router.refresh();
                   }
                 }}
                 className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"

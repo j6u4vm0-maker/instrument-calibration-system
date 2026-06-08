@@ -1,4 +1,5 @@
 import { Fixture } from '@prisma/client';
+import { FixtureCategoryService } from './fixture-category-service';
 import { prisma } from '../lib/prisma';
 import { CalibrationService } from './calibration-service';
 import { LogService } from './log-service';
@@ -152,6 +153,7 @@ export class FixtureService {
         managerRef: true,
         rdIssuerRef: true,
         vendorRef: true,
+        categoryRef: true,
       },
       orderBy: { id: 'asc' },
     });
@@ -211,11 +213,14 @@ export class FixtureService {
     const lastCalDate = data.lastCalDate ? new Date(data.lastCalDate) : new Date();
     const cycle = data.calibrationCycle || 12;
     const nextCalDate = data.nextCalDate ? new Date(data.nextCalDate) : CalibrationService.calculateNextCalDate(lastCalDate, cycle);
+    const categoryName = String(data.category || '').trim();
+    const category = categoryName ? await (prisma as any).fixtureCategory.findUnique({ where: { name: categoryName } }) : null;
 
     const fixture = await prisma.fixture.create({
       data: {
         id,
         ...rest,
+        categoryId: category?.id || null,
         lastCalDate,
         nextCalDate,
         status: data.status || 'IN_USE',
@@ -226,7 +231,7 @@ export class FixtureService {
       action: 'CREATE',
       module: 'FIXTURE',
       targetId: fixture.id,
-      content: { name: fixture.name, category: fixture.category },
+      content: { name: fixture.name, categoryId: fixture.categoryId },
     });
 
     return fixture;
@@ -265,6 +270,16 @@ export class FixtureService {
       const d = new Date(updateData.nextCalDate);
       if (!isNaN(d.getTime())) updateData.nextCalDate = d;
       else delete updateData.nextCalDate;
+    }
+
+    if (typeof updateData.category === 'string') {
+      const categoryName = updateData.category.trim();
+      if (categoryName) {
+        const category = await (prisma as any).fixtureCategory.findUnique({ where: { name: categoryName } });
+        updateData.categoryId = category?.id || null;
+      } else {
+        updateData.categoryId = null;
+      }
     }
 
     const updated = await prisma.fixture.update({
@@ -352,8 +367,9 @@ export class FixtureService {
           updateData.precision = standard.defaultPrecision;
         }
 
-        if (standard.targetCategory && !updateData.category) {
-          updateData.category = standard.targetCategory;
+        if (standard.targetCategory && !updateData.categoryId) {
+          const category = await (prisma as any).fixtureCategory.findUnique({ where: { name: standard.targetCategory } });
+          updateData.categoryId = category?.id || null;
         }
       }
     }
@@ -390,13 +406,8 @@ export class FixtureService {
   }
 
   static async getCategories() {
-    const existingFixtures = await prisma.fixture.findMany({
-      where: { deletedAt: null },
-      select: { category: true },
-      distinct: ['category'],
-    });
-    const fixtureCategories = existingFixtures.map(c => c.category).filter(Boolean);
-    return Array.from(new Set(fixtureCategories)).sort();
+    const categories = await FixtureCategoryService.getAllFixtureCategories();
+    return categories.map((c: any) => c.name);
   }
 
   static async bulkImportFixtures(data: any[]) {
@@ -436,6 +447,8 @@ export class FixtureService {
       const existing = await prisma.fixture.findUnique({
         where: { id: normalized.id },
       });
+      const categoryName = normalized.category || null;
+      const category = categoryName ? await (prisma as any).fixtureCategory.findUnique({ where: { name: categoryName } }) : null;
 
       if (existing) {
         const cycle = Number.isFinite(normalized.calibrationCycle) && normalized.calibrationCycle > 0
@@ -455,7 +468,7 @@ export class FixtureService {
             manual: normalized.manual || existing.manual,
             precision: normalized.precision || existing.precision,
             displayType: normalized.displayType || existing.displayType,
-            category: normalized.category || existing.category,
+            categoryId: category?.id || existing.categoryId,
             calPoints: normalized.calPoints || existing.calPoints,
             acceptance: normalized.acceptance || existing.acceptance,
             tafLogo: normalized.tafLogo || existing.tafLogo,
@@ -465,7 +478,7 @@ export class FixtureService {
             calType: normalized.calType || existing.calType,
             calibrationCycle: cycle,
             lastCalDate,
-            nextCalDate,
+            nextCalDate: nextCalDate || undefined,
             departmentId: departmentId || existing.departmentId,
             managerId: managerId || existing.managerId,
             manager: normalized.manager || existing.manager,
@@ -492,7 +505,7 @@ export class FixtureService {
             manual: normalized.manual || null,
             precision: normalized.precision || null,
             displayType: normalized.displayType || null,
-            category: normalized.category || null,
+            categoryId: category?.id || null,
             calPoints: normalized.calPoints || null,
             acceptance: normalized.acceptance || null,
             tafLogo: normalized.tafLogo || null,
@@ -502,7 +515,7 @@ export class FixtureService {
             calType: normalized.calType || 'INTERNAL',
             calibrationCycle: cycle,
             lastCalDate,
-            nextCalDate,
+            nextCalDate: nextCalDate || undefined,
             departmentId,
             managerId,
             manager: normalized.manager || null,

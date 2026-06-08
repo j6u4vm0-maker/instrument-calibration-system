@@ -16,7 +16,7 @@ export function FixtureImportExportButtons({ fixtures }: { fixtures: any[] }) {
       '管理編號/ID': g.id,
       '設備名稱/Name': g.name,
       '廠牌規格/Spec': g.brand || g.spec || '',
-      '類別/Category': g.category || '',
+      '類別/Category': g.categoryRef?.name || '',
       '廠區/Location': g.locationRef?.name || g.location || '',
       '部門/Department': g.departmentRef?.name || g.department || '',
       '保管人/Custodian': g.custodianRef?.name || '',
@@ -84,7 +84,7 @@ export function FixtureImportExportButtons({ fixtures }: { fixtures: any[] }) {
         return;
       }
 
-      const res = await importFixturesAction(parsedData);
+      const res: any = await importFixturesAction(parsedData);
       alert(`Import Successful!\nImported: ${res.imported}\nUpdated: ${res.updated}`);
     } catch (error) {
       console.error(error);

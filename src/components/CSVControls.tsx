@@ -153,7 +153,7 @@ export function CSVControls({
           return;
         }
 
-        const result = await importFixturesAction(parsedData);
+      const result: any = await importFixturesAction(parsedData);
         if (result.success) {
           alert(`匯入成功！\n新增: ${result.imported}\n更新: ${result.updated}`);
           window.location.reload();

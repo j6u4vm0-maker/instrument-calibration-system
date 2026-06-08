@@ -35,15 +35,15 @@ function normalizeWhitespace(value: string) {
 
 function splitVendorCodeAndName(rawVendor: string) {
   const value = normalizeWhitespace(rawVendor);
-  const match = value.match(/^(?<code>[^_]+)_(?<name>.+)$/);
+  const match = value.match(/^([^_]+)_(.+)$/);
 
-  if (!match?.groups) {
+  if (!match) {
     return { vendorCode: "", name: value };
   }
 
   return {
-    vendorCode: normalizeWhitespace(match.groups.code),
-    name: normalizeWhitespace(match.groups.name),
+    vendorCode: normalizeWhitespace(match[1]),
+    name: normalizeWhitespace(match[2]),
   };
 }
 

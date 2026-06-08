@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export type LogModule = 'GAGE' | 'CALIBRATION' | 'ORG' | 'STANDARD' | 'VENDOR';
+export type LogModule = 'GAGE' | 'CALIBRATION' | 'ORG' | 'STANDARD' | 'VENDOR' | 'FIXTURE' | 'CATEGORY';
 export type LogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'EXPORT' | 'RESTORE';
 
 export class LogService {

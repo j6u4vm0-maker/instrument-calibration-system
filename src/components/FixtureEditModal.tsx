@@ -10,7 +10,8 @@ import {
   Settings2, 
   UploadCloud
 } from "lucide-react";
-import { updateFixtureAction, deleteFixtureAction, getCategoriesAction } from "@/app/actions/fixture-actions";
+import { updateFixtureAction, deleteFixtureAction } from "@/app/actions/fixture-actions";
+import { getAllFixtureCategoriesAction } from "@/app/actions/category-actions";
 import { uploadReportAction } from "@/app/actions/upload-actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,8 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [category, setCategory] = useState(fixture.category);
+  const [category, setCategory] = useState(fixture.categoryRef?.name || fixture.category || "");
+  const [categories, setCategories] = useState<string[]>([]);
   const [status, setStatus] = useState(fixture.status || "IN_USE");
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [acceptance, setAcceptance] = useState(fixture.acceptance || "");
@@ -56,8 +58,10 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
   useEffect(() => {
     if (isOpen) {
       const loadData = async () => {
-        const cats = await getCategoriesAction();
-        setAllCategories(cats as string[]);
+        const cats = await getAllFixtureCategoriesAction();
+        const names = (cats as any[]).map(c => c.name).filter(Boolean);
+        setCategories(names);
+        setAllCategories(names);
       };
       loadData();
     }

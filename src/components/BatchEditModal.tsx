@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Save, Edit3, MapPin, Building2, User, Activity, ShieldCheck, FileText } from "lucide-react";
 import { batchUpdateGagesAction, getCategoriesAction } from "@/app/actions/gage-actions";
 import { batchUpdateFixturesAction, getCategoriesAction as getFixtureCategoriesAction } from "@/app/actions/fixture-actions";
-import { getAllCategoriesAction } from "@/app/actions/category-actions";
+import { getAllCategoriesAction, getAllFixtureCategoriesAction } from "@/app/actions/category-actions";
 import { getAllLocationsAction } from "@/app/actions/org-actions";
 import { getAllAcceptanceStandardsAction } from "@/app/actions/standard-actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -42,13 +42,12 @@ export default function BatchEditModal({ selectedIds, onSuccess, type = 'gage' }
         const [locations, stds, cats] = await Promise.all([
           getAllLocationsAction(),
           getAllAcceptanceStandardsAction(),
-          type === 'fixture' ? getAllCategoriesAction() : getCategoriesAction()
+          type === 'fixture' ? getAllFixtureCategoriesAction() : getCategoriesAction()
         ]);
         setOrgData(locations);
         setStandards(stds);
-        // For fixtures, use category names from the GageCategory table
         if (type === 'fixture') {
-          const catNames = (cats as any[]).map((c: any) => c.name).filter(Boolean);
+          const catNames = (cats as any[]).map((c: any) => c.name || c).filter(Boolean);
           setAllCategories(catNames);
         } else {
           setAllCategories(cats as string[]);

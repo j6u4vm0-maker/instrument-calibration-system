@@ -22,7 +22,7 @@ import BatchEditModal from "./BatchEditModal";
 import FixtureEditModal from "./FixtureEditModal";
 import { CSVControls } from "./CSVControls";
 import CategoryManagementModal from "./CategoryManagementModal";
-import { getAllCategoriesAction } from "@/app/actions/category-actions";
+import { getAllFixtureCategoriesAction } from "@/app/actions/category-actions";
 import CalibrationModal from "./CalibrationModal";
 import { formatLocaleDate } from "@/lib/date-format";
 
@@ -42,7 +42,7 @@ export default function FixtureTable({ fixtures, vendors = [] }: FixtureTablePro
 
   useEffect(() => {
     const loadCats = async () => {
-      const data = await getAllCategoriesAction();
+      const data = await getAllFixtureCategoriesAction();
       setCategories(data);
     };
     loadCats();
@@ -124,9 +124,9 @@ export default function FixtureTable({ fixtures, vendors = [] }: FixtureTablePro
     setSortConfig({ key, direction });
   };
 
-  const filteredByTab = activeCategory === "ALL" 
-    ? fixtures 
-    : fixtures.filter(g => g.category === activeCategory);
+  const filteredByTab = activeCategory === "ALL"
+    ? fixtures
+    : fixtures.filter(g => g.categoryRef?.name === activeCategory);
 
   const filteredFixtures = filteredByTab.filter(fixture => selectedStatuses.includes(fixture.status));
 
@@ -339,8 +339,8 @@ export default function FixtureTable({ fixtures, vendors = [] }: FixtureTablePro
                     <td className="px-6 py-4 font-medium text-slate-800 truncate" title={fixture.name}>{fixture.name}</td>
                   )}
                   {visibleColumns.includes("category") && (
-                    <td className="px-6 py-4 truncate" title={fixture.category}>
-                      <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-xs">{fixture.category}</span>
+                    <td className="px-6 py-4 truncate" title={fixture.categoryRef?.name}>
+                      <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-xs">{fixture.categoryRef?.name}</span>
                     </td>
                   )}
                   {visibleColumns.includes("spec") && (

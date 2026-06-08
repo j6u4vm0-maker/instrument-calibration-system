@@ -55,7 +55,6 @@ export class StandardService {
       points: string;
       unit?: string;
     }[];
-    defaultCycle?: number;
     defaultPrecision?: string;
   }) {
     const standard = await prisma.acceptanceStandard.create({

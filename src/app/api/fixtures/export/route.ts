@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const location = searchParams.get('location');
     
-    let fixtures = await FixtureService.getAllFixtures();
+    let fixtures: any[] = await FixtureService.getAllFixtures();
     
     if (location) {
       fixtures = fixtures.filter(f => (f.locationRef?.name || f.location) === location);
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       fixture.drawingNo || "",
       fixture.manual || "",
       fixture.brand || "",
-      fixture.category || "",
+      fixture.categoryRef?.name || fixture.category || "",
       fixture.locationRef?.name || "",
       fixture.departmentRef?.name || "",
       fixture.custodianRef?.name || "",

@@ -83,7 +83,7 @@ export function LanguageProvider({
     // To support legacy keys that don't have dots, we could prefix them with a default namespace
     // if i18next doesn't find them.
     
-    return result;
+    return String(result);
   };
 
   return (

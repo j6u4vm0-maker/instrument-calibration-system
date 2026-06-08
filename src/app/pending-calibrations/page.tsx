@@ -79,6 +79,7 @@ export default async function PendingCalibrationsPage() {
                     gageId={gage.id} 
                     calPoints={gage.calPoints} 
                     acceptance={gage.acceptance} 
+                    calibrationCycle={gage.calibrationCycle || 12}
                   />
                 </div>
               </div>

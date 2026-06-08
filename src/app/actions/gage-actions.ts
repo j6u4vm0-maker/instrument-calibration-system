@@ -63,7 +63,7 @@ export async function addCalibrationRecordAction(formData: FormData) {
     throw new Error("請填寫必要欄位");
   }
 
-  let details = [];
+  let details: any[] = [];
   if (detailsStr) {
     try {
       const rawDetails = JSON.parse(detailsStr);

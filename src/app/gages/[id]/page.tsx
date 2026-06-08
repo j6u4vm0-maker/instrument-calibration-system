@@ -85,8 +85,8 @@ export default async function GageDetailPage({
               gageId={gage.id} 
               gageName={gage.name}
               gageSpec={gage.spec || ''}
-              calPoints={gage.calPoints} 
-              acceptance={gage.acceptance} 
+              calPoints={gage.calPoints || ''} 
+              acceptance={gage.acceptance || ''} 
               calibrationCycle={gage.calibrationCycle}
               acceptanceStandard={gage.acceptanceStandard}
               vendors={vendors}
@@ -111,7 +111,7 @@ export default async function GageDetailPage({
                   {/* Basic Info Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
                     {[
-                      { label: t('calibration.gage.category'), value: gage.category },
+                      { label: t('calibration.gage.category'), value: gage.category || '-' },
                       { 
                         label: t('calibration.gage.location'), 
                         value: (
@@ -173,7 +173,7 @@ export default async function GageDetailPage({
                         {t('calibration.gage.acceptance')}
                       </label>
                       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                        <CriteriaTable text={gage.acceptance} />
+                        <CriteriaTable text={gage.acceptance || ''} />
                       </div>
                     </div>
                     <div className="group">
@@ -181,7 +181,7 @@ export default async function GageDetailPage({
                         {t('calibration.gage.points')}
                       </label>
                       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                        <PointsTable text={gage.calPoints} />
+                        <PointsTable text={gage.calPoints || ''} />
                       </div>
                     </div>
                   </div>

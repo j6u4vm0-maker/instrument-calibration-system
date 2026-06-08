@@ -45,16 +45,33 @@ export class CategoryService {
    */
   static async createCategory(name: string, description?: string) {
     if (!(prisma as any).gageCategory) throw new Error("Prisma Client out of sync. Please restart npm run dev.");
-    
-    const category = await prisma.gageCategory.create({
-      data: { name, description }
+
+    const normalizedName = name.trim();
+    if (!normalizedName) {
+      throw new Error("Category name is required.");
+    }
+
+    const existing = await prisma.gageCategory.findUnique({
+      where: { name: normalizedName }
     });
+
+    const category = existing
+      ? await prisma.gageCategory.update({
+          where: { id: existing.id },
+          data: {
+            deletedAt: null,
+            description: description ?? existing.description ?? undefined,
+          }
+        })
+      : await prisma.gageCategory.create({
+          data: { name: normalizedName, description }
+        });
 
     await LogService.log({
       action: 'CREATE',
       module: 'CATEGORY',
       targetId: category.id,
-      content: { name }
+      content: { name: normalizedName, restored: Boolean(existing) }
     });
 
     return category;

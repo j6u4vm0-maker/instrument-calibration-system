@@ -78,7 +78,7 @@ export class DashboardService {
     const notifications: any[] = [];
 
     for (const rule of rules) {
-      let targets = [];
+      let targets: any[] = [];
       if (rule.type === 'ALL') {
         targets = allGages;
       } else if (rule.type === 'CATEGORY') {

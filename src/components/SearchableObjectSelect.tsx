@@ -7,7 +7,7 @@ export interface SelectOption {
   label: string;
   value: string;
   subLabel?: string;
-  type?: 'staff' | 'dept' | 'loc';
+  type?: 'staff' | 'dept' | 'loc' | 'vendor';
 }
 
 interface SearchableObjectSelectProps {

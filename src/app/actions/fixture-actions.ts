@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { FixtureService } from '@/services/fixture-service';
+import { FixtureCategoryService } from '@/services/fixture-category-service';
 
 export async function getFixturesAction() {
   try {
@@ -90,7 +91,8 @@ export async function batchUpdateFixturesAction(ids: string[], data: any) {
 
 export async function getCategoriesAction() {
   try {
-    return await FixtureService.getCategories();
+    const categories = await FixtureCategoryService.getAllFixtureCategories();
+    return categories.map((c: any) => c.name);
   } catch (error: any) {
     console.error("Failed to get categories:", error);
     return [];
