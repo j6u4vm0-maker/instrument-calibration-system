@@ -103,6 +103,7 @@
     "ng_alert": "⚠️ Alert: This report is judged as FAIL (NG)!\nPlease confirm the values or prepare for subsequent abnormal handling.",
     "status_draft": "Save Draft",
     "submit_review": "Submit Report",
+    "new_report": "New Report",
     "processing": "Processing...",
     "import_success": "Import Successful",
     "import_failed": "Import Failed",

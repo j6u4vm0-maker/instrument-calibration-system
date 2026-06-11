@@ -95,6 +95,7 @@
     "ng_alert": "⚠️ 提醒：此份报告判定为 FAIL (NG)！\n请确认数值是否正确，或是准备后续异常处理。",
     "status_draft": "保存草稿",
     "submit_review": "送审报告",
+    "new_report": "登录新报告",
     "processing": "处理中...",
     "import_success": "导入成功",
     "import_failed": "导入失败",

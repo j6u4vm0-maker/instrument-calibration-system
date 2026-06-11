@@ -29,7 +29,8 @@
     "set_default_cust": "設為預設保管人",
     "set_default_insp": "設為預設檢驗人",
     "is_default_cust": "預設保管人",
-    "is_default_insp": "預設檢驗人"
+    "is_default_insp": "預設檢驗人",
+    "cal_engineer": "校正工程師"
   },
   "vendor": {
     "mgmt": "廠商管理",

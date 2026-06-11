@@ -16,11 +16,13 @@ interface GageOrganizationSelectorProps {
     vendorId?: string;
   };
   onUpdate?: (data: any) => void;
+  hideRdIssuer?: boolean;
 }
 
 export function GageOrganizationSelector({
   initialData,
-  onUpdate
+  onUpdate,
+  hideRdIssuer = false
 }: GageOrganizationSelectorProps) {
   const { t } = useLanguage();
   const [orgData, setOrgData] = useState<any[]>([]);
@@ -206,17 +208,19 @@ export function GageOrganizationSelector({
         />
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">
-          RD發行人
-        </label>
-        <SearchableObjectSelect 
-          options={staffOptions}
-          value={rdIssuerId}
-          placeholder="選擇RD發行人"
-          onChange={(val) => setRdIssuerId(val)}
-        />
-      </div>
+      {!hideRdIssuer && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-tight">
+            RD發行人
+          </label>
+          <SearchableObjectSelect 
+            options={staffOptions}
+            value={rdIssuerId}
+            placeholder="選擇RD發行人"
+            onChange={(val) => setRdIssuerId(val)}
+          />
+        </div>
+      )}
 
       {showVendor && (
         <div className="space-y-1.5 md:col-span-2">

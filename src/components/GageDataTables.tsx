@@ -58,8 +58,8 @@ export function CriteriaTable({ text }: { text: string }) {
         <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
           <tr>
             <th className="px-3 py-2 border-b border-slate-100">{t('calibration.gage.category')}</th>
-            <th className="px-3 py-2 border-b border-slate-100">{t('calibration.std.range')}</th>
-            <th className="px-3 py-2 border-b border-slate-100">{t('calibration.std.tolerance')}</th>
+            <th className="px-3 py-2 border-b border-slate-100">{t('calibration.cal.std.range')}</th>
+            <th className="px-3 py-2 border-b border-slate-100">{t('calibration.cal.std.tolerance')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
@@ -171,8 +171,8 @@ export function CriteriaEditor({ value, onChange }: { value: string, onChange: (
           <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.gage.category')}</th>
-              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.std.range')}</th>
-              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.std.tolerance')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.range')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.tolerance')}</th>
               <th className="px-3 py-2.5 border-b border-slate-100 w-10"></th>
             </tr>
           </thead>

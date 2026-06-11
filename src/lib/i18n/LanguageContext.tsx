@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import i18n from './config';
 import { useTranslation } from 'react-i18next';
+import { dictionary } from './translations';
 
 export type Language = 'en-US' | 'zh-TW' | 'zh-CN' | 'en' | 'zh';
 export type Role = 'admin' | 'qa_manager' | 'engineer';
@@ -78,10 +79,22 @@ export function LanguageProvider({
     // Attempt to translate using i18next
     const result = i18nT(key, options);
     
-    // If result is the same as key, it might be a legacy key (e.g., 'nav_dashboard')
-    // We can try to map legacy keys if needed, but the new system uses namespaces.
-    // To support legacy keys that don't have dots, we could prefix them with a default namespace
-    // if i18next doesn't find them.
+    // If result is the same as key, it might be in translations.ts
+    if (result === key) {
+      const parts = key.split('.');
+      let current: any = dictionary;
+      for (const part of parts) {
+        if (current[part] === undefined) {
+          return key;
+        }
+        current = current[part];
+      }
+      
+      if (current && typeof current === 'object') {
+        const langKey = language.startsWith('zh') ? 'zh' : 'en';
+        if (current[langKey]) return current[langKey];
+      }
+    }
     
     return String(result);
   };

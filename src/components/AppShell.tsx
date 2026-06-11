@@ -76,6 +76,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Package className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold tracking-wide">檢具清冊 Fixtures</span>
           </Link>
+          <Link href="/round-bar" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${pathname.startsWith('/round-bar') ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+            <Database className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-bold tracking-wide">圓棒管理 Round Bar</span>
+          </Link>
           <Link href="/vendors" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${pathname.startsWith('/vendors') ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
             <Building className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold tracking-wide">供應商管理 Vendors</span>

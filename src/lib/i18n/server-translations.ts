@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { resources as allResources } from './resources';
 
+import { dictionary } from './translations';
+
 // Helper to get nested value from object
 function getNestedValue(obj: any, path: string) {
   return path.split('.').reduce((prev, curr) => prev?.[curr], obj);
@@ -24,6 +26,23 @@ export async function getTranslation() {
     if (!val || typeof val !== 'string') {
       // Fallback to en-US
       val = getNestedValue(fallbackResources, key);
+    }
+
+    // If still not found, check dictionary from translations.ts
+    if (!val || typeof val !== 'string') {
+      const parts = key.split('.');
+      let current: any = dictionary;
+      for (const part of parts) {
+        if (!current || current[part] === undefined) {
+          current = undefined;
+          break;
+        }
+        current = current[part];
+      }
+      if (current && typeof current === 'object') {
+        const langKey = language.startsWith('zh') ? 'zh' : 'en';
+        val = current[langKey];
+      }
     }
 
     if (val && typeof val === 'string') {

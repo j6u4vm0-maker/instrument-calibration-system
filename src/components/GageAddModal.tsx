@@ -70,7 +70,6 @@ export default function GageAddModal() {
       departmentId: (formData.get('departmentId') as string) || null,
       custodianId: (formData.get('custodianId') as string) || null,
       managerId: (formData.get('managerId') as string) || null,
-      rdIssuerId: (formData.get('rdIssuerId') as string) || null,
       vendorId: (formData.get('vendorId') as string) || null,
       notes: notes,
       status: status,
@@ -111,7 +110,7 @@ export default function GageAddModal() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200 flex flex-col h-[90vh]">
             
-            <header className="px-8 py-5 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
+            <header className="px-8 py-5 bg-[#ACD6FF] border-b border-blue-200 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-kst-blue rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
                   <ShieldCheck className="w-5 h-5 text-white" />
@@ -132,7 +131,7 @@ export default function GageAddModal() {
               <section className="space-y-5">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                   <Info className="w-4 h-4 text-kst-blue" />
-                  <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">{t('cal.basic_info')}</h4>
+                  <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">{t('calibration.cal.basic_info')}</h4>
                 </div>
                 
                 <div className="flex flex-wrap -mx-3">
@@ -177,7 +176,7 @@ export default function GageAddModal() {
                   <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">技術規格與週期</h4>
                 </div>
 
-                <div className="bg-blue-50/30 p-5 rounded-2xl border border-blue-100/50 space-y-4">
+                <div className="bg-[#ECECFF] p-5 rounded-2xl border border-blue-100/50 space-y-4">
                   <div className="space-y-2">
                     <label className={labelStyle}>快速套用標準庫 (Standard Library)</label>
                     <div className="flex gap-3">
@@ -329,7 +328,7 @@ export default function GageAddModal() {
                   <Info className="w-4 h-4 text-kst-blue" />
                   <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">組織歸屬與保管</h4>
                 </div>
-                <GageOrganizationSelector />
+                <GageOrganizationSelector hideRdIssuer={true} />
               </section>
             </form>
 

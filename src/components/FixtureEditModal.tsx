@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { 
-  X, 
-  Save, 
-  Trash2, 
-  Edit3, 
-  Info, 
-  Settings2, 
+import {
+  X,
+  Save,
+  Trash2,
+  Edit3,
+  Info,
+  Settings2,
   UploadCloud
 } from "lucide-react";
 import { updateFixtureAction, deleteFixtureAction } from "@/app/actions/fixture-actions";
@@ -48,7 +48,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
       if (url) {
         setManualVal(url);
       }
-    } catch(e) {
+    } catch (e) {
       alert("上傳失敗");
     } finally {
       setIsUploading(false);
@@ -71,7 +71,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
     e.preventDefault();
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
-    
+
     const data = {
       name: formData.get('name') as string,
       serialNo: formData.get('serialNo') as string,
@@ -120,7 +120,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         title="編輯檢具"
       >
@@ -130,15 +130,15 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
       {isOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200 flex flex-col h-[90vh]">
-            
-            <header className="px-8 py-5 bg-slate-100 border-b border-slate-200 flex justify-between items-center shrink-0">
+
+            <header className="px-8 py-5 bg-[#ACD6FF] border-b border-blue-200 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-kst-blue rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                   <Edit3 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                    編輯檢具 
+                    編輯檢具
                     <span className="text-kst-blue font-mono">({fixture.id})</span>
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">更新檢具設定</p>
@@ -150,14 +150,14 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
             </header>
 
             <form id="editFixtureForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-10 custom-scrollbar">
-              
+
               {/* --- SECTION 1: 基本資訊 --- */}
               <section className="space-y-5">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                   <Info className="w-4 h-4 text-kst-blue" />
                   <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">基本資訊</h4>
                 </div>
-                
+
                 <div className="flex flex-wrap -mx-3">
                   <div className="w-full md:w-1/2 px-3 mb-5">
                     <label className={labelStyle}>儀器設備名稱</label>
@@ -178,13 +178,13 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
                   <div className="w-full md:w-1/2 px-3 mb-5">
                     <label className={labelStyle}>使用說明書</label>
                     <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        name="manual" 
+                      <input
+                        type="text"
+                        name="manual"
                         value={manualVal}
                         onChange={e => setManualVal(e.target.value)}
-                        placeholder="可輸入連結或說明書編號" 
-                        className={inputStyle} 
+                        placeholder="可輸入連結或說明書編號"
+                        className={inputStyle}
                       />
                       <label title="上傳說明書檔案" className={`shrink-0 flex items-center justify-center px-4 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                         <UploadCloud className="w-4 h-4 text-slate-500" />
@@ -214,7 +214,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
                   <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">組織歸屬與保管</h4>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-100 p-6">
-                  <FixtureOrganizationSelector 
+                  <FixtureOrganizationSelector
                     initialData={{
                       locationId: fixture.locationId || undefined,
                       departmentId: fixture.departmentId || undefined,
@@ -222,7 +222,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
                       managerId: fixture.managerId || undefined,
                       rdIssuerId: fixture.rdIssuerId || undefined,
                       vendorId: fixture.vendorId || undefined,
-                    }} 
+                    }}
                   />
                 </div>
               </section>
@@ -235,52 +235,51 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
                 </div>
 
                 <div className="rounded-2xl border border-blue-200 bg-blue-100/60 p-6">
-                <div className="flex flex-wrap -mx-3">
-                  <div className="w-full md:w-1/2 px-3 mb-5">
-                    <label className={`${labelStyle} flex justify-between items-center`}>
-                      <span>{t('calibration.fixture.cycle')} (月)</span>
-                      <div className="flex gap-1">
-                        {[12, 24, 36].map(m => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => setCycle(m)}
-                            className={`text-[9px] px-2 py-0.5 rounded-md border font-black transition-all ${
-                              cycle === m 
-                                ? 'bg-kst-blue text-white border-kst-blue shadow-sm' 
-                                : 'bg-white text-slate-400 border-slate-200 hover:border-kst-blue hover:text-kst-blue'
-                            }`}
-                          >
-                            {m/12}年
-                          </button>
-                        ))}
-                      </div>
-                    </label>
-                    <input required type="number" name="calibrationCycle" value={cycle} onChange={(e) => setCycle(parseInt(e.target.value) || 0)} className={inputStyle} />
-                  </div>
+                  <div className="flex flex-wrap -mx-3">
+                    <div className="w-full md:w-1/2 px-3 mb-5">
+                      <label className={`${labelStyle} flex justify-between items-center`}>
+                        <span>{t('calibration.fixture.cycle')} (月)</span>
+                        <div className="flex gap-1">
+                          {[12, 24, 36].map(m => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setCycle(m)}
+                              className={`text-[9px] px-2 py-0.5 rounded-md border font-black transition-all ${cycle === m
+                                  ? 'bg-kst-blue text-white border-kst-blue shadow-sm'
+                                  : 'bg-white text-slate-400 border-slate-200 hover:border-kst-blue hover:text-kst-blue'
+                                }`}
+                            >
+                              {m / 12}年
+                            </button>
+                          ))}
+                        </div>
+                      </label>
+                      <input required type="number" name="calibrationCycle" value={cycle} onChange={(e) => setCycle(parseInt(e.target.value) || 0)} className={inputStyle} />
+                    </div>
 
-                  <div className="w-full md:w-1/2 px-3 mb-5">
-                    <label className={labelStyle}>上次校正日</label>
-                    <input 
-                      type="date" 
-                      name="lastCalDate" 
-                      defaultValue={fixture.lastCalDate ? new Date(fixture.lastCalDate).toISOString().split('T')[0] : ''}
-                      className={inputStyle} 
-                    />
+                    <div className="w-full md:w-1/2 px-3 mb-5">
+                      <label className={labelStyle}>上次校正日</label>
+                      <input
+                        type="date"
+                        name="lastCalDate"
+                        defaultValue={fixture.lastCalDate ? new Date(fixture.lastCalDate).toISOString().split('T')[0] : ''}
+                        className={inputStyle}
+                      />
+                    </div>
+                    <div className="w-full px-3">
+                      <label className={labelStyle}>校正點位</label>
+                      <textarea
+                        value={calPoints}
+                        onChange={(e) => setCalPoints(e.target.value)}
+                        placeholder="FAI尺寸"
+                        className={`${inputStyle} min-h-[96px] resize-y`}
+                      />
+                      <p className="mt-2 text-xs text-slate-500">
+                        預設為 FAI尺寸，如有需要可直接修改。
+                      </p>
+                    </div>
                   </div>
-                  <div className="w-full px-3">
-                    <label className={labelStyle}>校正點位</label>
-                    <textarea
-                      value={calPoints}
-                      onChange={(e) => setCalPoints(e.target.value)}
-                      placeholder="FAI尺寸"
-                      className={`${inputStyle} min-h-[96px] resize-y`}
-                    />
-                    <p className="mt-2 text-xs text-slate-500">
-                      預設為 FAI尺寸，如有需要可直接修改。
-                    </p>
-                  </div>
-                </div>
                 </div>
               </section>
 
@@ -304,15 +303,15 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
             </form>
 
             <footer className="px-8 py-5 bg-slate-100 border-t border-slate-200 flex items-center gap-4 shrink-0">
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
               >
                 {t('common.common.cancel')}
               </button>
-              
-              <button 
+
+              <button
                 type="button"
                 onClick={async () => {
                   if (confirm(t('calibration.fixture.confirm_del').replace('{{id}}', fixture.id))) {
@@ -332,7 +331,7 @@ export default function FixtureEditModal({ fixture }: FixtureEditModalProps) {
 
               <div className="flex-1" />
 
-              <button 
+              <button
                 disabled={isSubmitting}
                 form="editFixtureForm"
                 type="submit"

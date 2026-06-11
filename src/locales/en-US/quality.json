@@ -29,7 +29,8 @@
     "set_default_cust": "Set Default Custodian",
     "set_default_insp": "Set Default Inspector",
     "is_default_cust": "Default Custodian",
-    "is_default_insp": "Default Inspector"
+    "is_default_insp": "Default Inspector",
+    "cal_engineer": "Cal. Engineer"
   },
   "vendor": {
     "mgmt": "Vendor Management",

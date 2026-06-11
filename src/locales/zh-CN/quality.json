@@ -29,7 +29,8 @@
     "set_default_cust": "设为默认保管人",
     "set_default_insp": "设为默认检验人",
     "is_default_cust": "默认保管人",
-    "is_default_insp": "默认检验人"
+    "is_default_insp": "默认检验人",
+    "cal_engineer": "校正工程师"
   },
   "vendor": {
     "mgmt": "厂商管理",
