@@ -72,32 +72,70 @@ export function useCalibrationForm({ gageInfo, initialData }: UseCalibrationForm
           }));
         }
       } catch (e) {
-        const tokens = (gageInfo.calPoints || "").split(/[,，\s]+/).filter(p => p.trim() !== "");
-        let currentCategory = "";
-        for (const token of tokens) {
-          if (token.endsWith(":") || token.endsWith("：")) {
-            currentCategory = token.slice(0, -1).trim();
-          } else if (token.includes(":") || token.includes("：")) {
-            const parts = token.split(/[:：]/);
-            initialDetails.push({
-              category: parts[0].trim(),
-              point: parts[1].trim(),
-              lowerLimit: "",
-              upperLimit: "",
-              actual: "",
-              error: 0,
-              result: "PASS"
-            });
-          } else {
-            initialDetails.push({
-              category: currentCategory,
-              point: token,
-              lowerLimit: "",
-              upperLimit: "",
-              actual: "",
-              error: 0,
-              result: "PASS"
-            });
+        const rawString = gageInfo.calPoints || "";
+        if (rawString.includes("\\n")) {
+          const lines = rawString.split("\\n").filter(l => l.trim() !== "");
+          for (const line of lines) {
+            const colonIndex = line.indexOf(":");
+            if (colonIndex !== -1) {
+              const categoryStr = line.substring(0, colonIndex).trim();
+              const pointsStr = line.substring(colonIndex + 1).trim();
+              
+              if (pointsStr) {
+                const points = pointsStr.split(/[,，\\s]+/).filter(p => p.trim() !== "");
+                for (const point of points) {
+                  initialDetails.push({
+                    category: categoryStr,
+                    point: point,
+                    lowerLimit: "", upperLimit: "", actual: "", error: 0, result: "PASS"
+                  });
+                }
+              } else {
+                initialDetails.push({
+                  category: categoryStr,
+                  point: "",
+                  lowerLimit: "", upperLimit: "", actual: "", error: 0, result: "PASS"
+                });
+              }
+            } else {
+              initialDetails.push({
+                category: "",
+                point: line.trim(),
+                lowerLimit: "", upperLimit: "", actual: "", error: 0, result: "PASS"
+              });
+            }
+          }
+        } else {
+          // Legacy single-line format
+          const tokens = rawString.split(/[,，\\s]+/).filter(p => p.trim() !== "");
+          let currentCategory = "";
+          for (const token of tokens) {
+            if (token.endsWith(":") || token.endsWith("：")) {
+              currentCategory = token.slice(0, -1).trim();
+            } else if (token.includes(":") || token.includes("：")) {
+              const parts = token.split(/[:：]/);
+              const cat = parts[0].trim();
+              currentCategory = cat;
+              initialDetails.push({
+                category: cat,
+                point: parts[1].trim(),
+                lowerLimit: "",
+                upperLimit: "",
+                actual: "",
+                error: 0,
+                result: "PASS"
+              });
+            } else {
+              initialDetails.push({
+                category: currentCategory,
+                point: token,
+                lowerLimit: "",
+                upperLimit: "",
+                actual: "",
+                error: 0,
+                result: "PASS"
+              });
+            }
           }
         }
         if (initialDetails.length === 0) {
@@ -119,7 +157,9 @@ export function useCalibrationForm({ gageInfo, initialData }: UseCalibrationForm
           const pointNum = parseFloat(d.point);
           if (!isNaN(pointNum) && !d.lowerLimit && !d.upperLimit) {
             const criterion = gageInfo.acceptanceStandard.criteria.find((c: any) => {
-              const matchesCategory = !c.category || !d.category || c.category === d.category;
+              const cCat = (c.category || "").trim().split('(')[0];
+              const dCat = (d.category || "").trim().split('(')[0];
+              const matchesCategory = !cCat || !dCat || cCat === dCat || dCat.includes(cCat);
               const start = c.rangeStart ?? -Infinity;
               const end = c.rangeEnd ?? Infinity;
               return matchesCategory && pointNum >= start && pointNum <= end;
@@ -164,7 +204,7 @@ export function useCalibrationForm({ gageInfo, initialData }: UseCalibrationForm
     const newDetails = [...details];
     newDetails[index][field] = val;
 
-    if (field === 'point' || field === 'actual' || field === 'category') {
+    if (field === 'point' || field === 'actual') {
       const actualNum = parseFloat(newDetails[index].actual);
       const pointNum = parseFloat(newDetails[index].point);
       
@@ -173,10 +213,15 @@ export function useCalibrationForm({ gageInfo, initialData }: UseCalibrationForm
       } else {
         newDetails[index].error = 0;
       }
+    }
 
+    if (field === 'point' || field === 'category') {
+      const pointNum = parseFloat(newDetails[index].point);
       if (!isNaN(pointNum) && gageInfo.acceptanceStandard?.criteria) {
         const criterion = gageInfo.acceptanceStandard.criteria.find((c: any) => {
-          const matchesCategory = !c.category || !newDetails[index].category || c.category === newDetails[index].category;
+          const cCat = (c.category || "").trim().split('(')[0];
+          const dCat = (newDetails[index].category || "").trim().split('(')[0];
+          const matchesCategory = !cCat || !dCat || cCat === dCat || dCat.includes(cCat);
           const start = c.rangeStart ?? -Infinity;
           const end = c.rangeEnd ?? Infinity;
           return matchesCategory && pointNum >= start && pointNum <= end;
@@ -189,8 +234,8 @@ export function useCalibrationForm({ gageInfo, initialData }: UseCalibrationForm
           newDetails[index].lowerLimit = (pointNum - Math.abs(criterion.toleranceMinus)).toFixed(4);
           newDetails[index].upperLimit = (pointNum + Math.abs(criterion.tolerancePlus)).toFixed(4);
         } else {
-          newDetails[index].lowerLimit = "";
-          newDetails[index].upperLimit = "";
+          // Optional: Only clear if we actually had a point. But typically we don't want to aggressively clear manually entered limits.
+          // We will preserve manual limits if the standard doesn't match anymore.
         }
       }
     }

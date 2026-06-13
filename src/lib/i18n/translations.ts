@@ -136,6 +136,7 @@ export const dictionary = {
     upper_limit:   { en: 'Upper Limit',        zh: '上限' },
     traceability:  { en: 'Traceability',       zh: '追溯性' },
     internal_standard: { en: 'Internal Standard', zh: '內部標準件' },
+    uncategorized: { en: 'Uncategorized',      zh: '未分類' },
   },
 
   // --- Batch Calibration ---

@@ -22,6 +22,8 @@ export default async function ReportsPage() {
   const allGages = await GageService.getBasicGages();
   const vendors = await BatchService.getAllVendors();
   const reportsToReview = records.filter(r => r.status === 'PENDING');
+  const draftRecords = records.filter(r => r.status === 'DRAFT');
+  const historyRecords = records.filter(r => r.status !== 'DRAFT' && r.status !== 'PENDING');
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-12">
@@ -52,6 +54,21 @@ export default async function ReportsPage() {
         </section>
       )}
 
+      {/* 草稿報告專區 */}
+      {draftRecords.length > 0 && (
+        <section className="space-y-6 pt-6 border-t border-slate-100">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <ClipboardList className="w-6 h-6 text-slate-500" />
+              未完成草稿 ({draftRecords.length})
+            </h2>
+          </div>
+          <div className="bg-slate-50/80 border border-slate-200 rounded-3xl p-2 overflow-hidden">
+            <RecordTable records={draftRecords} gages={allGages} vendors={vendors} />
+          </div>
+        </section>
+      )}
+
       {/* 2. 歷史報告查詢與管理 */}
       <section className="space-y-6 pt-6 border-t border-slate-100">
         <div className="flex justify-between items-center">
@@ -60,10 +77,10 @@ export default async function ReportsPage() {
             {t('common.dash.history_reports')}
           </h2>
           <div className="text-sm font-medium text-slate-400">
-            {records.length} {t('calibration.cal.total_records')}
+            {historyRecords.length} {t('calibration.cal.total_records')}
           </div>
         </div>
-        <RecordTable records={records} gages={allGages} vendors={vendors} />
+        <RecordTable records={historyRecords} gages={allGages} vendors={vendors} />
       </section>
     </div>
   );

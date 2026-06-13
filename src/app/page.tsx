@@ -158,7 +158,7 @@ export default async function Home() {
           <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-amber-50/10">
             <h3 className="font-bold text-slate-800 flex items-center gap-3">
               <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">!</div>
-              Pending Review
+              {t("common.status.pending")}
               <span className="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full ml-1 font-bold">
                 {stats.pendingReviewCount}
               </span>

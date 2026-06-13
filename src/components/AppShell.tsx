@@ -101,6 +101,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Building2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold tracking-wide">組織設定 Org</span>
           </Link>
+          <Link href="/settings/system" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${pathname === '/settings/system' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+            <Settings className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-bold tracking-wide">備份與維護 Backup</span>
+          </Link>
           <Link href="/settings/standards" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${pathname === '/settings/standards' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
             <ShieldCheck className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold tracking-wide">標準庫 Standards</span>

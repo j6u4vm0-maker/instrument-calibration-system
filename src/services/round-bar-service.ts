@@ -17,6 +17,7 @@ export class RoundBarService {
         { id: { contains: params.search } },
         { name: { contains: params.search } },
         { spec: { contains: params.search } },
+        { usageRange: { contains: params.search } },
       ];
     }
     if (params?.status) where.status = params.status;

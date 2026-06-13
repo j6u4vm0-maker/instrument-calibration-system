@@ -17,7 +17,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useRouter } from "next/navigation";
 import { SearchableSelect } from "./SearchableSelect";
 import { GageOrganizationSelector } from "./GageOrganizationSelector";
-import { CriteriaEditor, PointsEditor } from "./GageDataTables";
+import { CombinedCriteriaPointsEditor } from "./GageDataTables";
 
 export default function GageAddModal() {
   const { t } = useLanguage();
@@ -200,7 +200,11 @@ export default function GageAddModal() {
                             const std = standards.find(s => s.id === standardId);
                             if (std) {
                               if (std.points && std.points.length > 0) {
-                                const ptsStr = std.points.map((p: any) => `${p.category}: ${p.points}`).join('\n');
+                                const ptsStr = std.points.map((p: any) => {
+                                  const matchingCriteria = std.criteria?.find((c: any) => c.category === p.category);
+                                  const unit = matchingCriteria?.unit ? `(${matchingCriteria.unit})` : '';
+                                  return `${p.category}${unit}: ${p.points}`;
+                                }).join('\n');
                                 setCalPoints(ptsStr);
                               }
                               if (std.criteria && std.criteria.length > 0) {
@@ -295,12 +299,12 @@ export default function GageAddModal() {
                 <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-6">
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
-                      <label className={labelStyle}>{t('calibration.gage.acceptance')}</label>
-                      <CriteriaEditor value={acceptance} onChange={setAcceptance} />
-                    </div>
-                    <div className="space-y-2">
-                      <label className={labelStyle}>{t('calibration.gage.points')}</label>
-                      <PointsEditor value={calPoints} onChange={setCalPoints} />
+                      <CombinedCriteriaPointsEditor 
+                        acceptance={acceptance} 
+                        calPoints={calPoints} 
+                        onChangeAcceptance={setAcceptance} 
+                        onChangeCalPoints={setCalPoints} 
+                      />
                     </div>
                   </div>
                 </div>

@@ -8,13 +8,15 @@ interface StandardPointsEditorProps {
   onAdd: () => void;
   onRemove: (index: number) => void;
   onChange: (index: number, field: string, value: string) => void;
+  onBlurCategory?: (index: number, value: string) => void;
 }
 
 export function StandardPointsEditor({
   pointsList,
   onAdd,
   onRemove,
-  onChange
+  onChange,
+  onBlurCategory
 }: StandardPointsEditorProps) {
   const { t } = useLanguage();
 
@@ -39,6 +41,7 @@ export function StandardPointsEditor({
                 type="text"
                 value={p.category}
                 onChange={(e) => onChange(idx, 'category', e.target.value)}
+                onBlur={(e) => onBlurCategory && onBlurCategory(idx, e.target.value)}
                 placeholder={t('calibration.cal.item_category')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500/20"
               />

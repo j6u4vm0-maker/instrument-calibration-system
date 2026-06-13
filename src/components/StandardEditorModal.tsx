@@ -14,8 +14,6 @@ import { getCategoriesAction, createCategoryAction } from "@/app/actions/gage-ac
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useRouter } from "next/navigation";
 import { SearchableSelect } from "./SearchableSelect";
-import { StandardPointsEditor } from "./StandardPointsEditor";
-import { StandardCriteriaEditor } from "./StandardCriteriaEditor";
 
 interface StandardEditorModalProps {
   standard?: any;
@@ -36,17 +34,44 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [type, setType] = useState(standard?.type || "STEPPED");
-  const [criteria, setCriteria] = useState<any[]>(
-    standard?.criteria || [
+  const [items, setItems] = useState<any[]>(() => {
+    const crits = standard?.criteria || [
       { category: "外徑", rangeStart: 0, rangeEnd: 100, tolerancePlus: 0.02, toleranceMinus: -0.02, unit: "mm" }
-    ]
-  );
-  const [defaultUnit, setDefaultUnit] = useState(standard?.criteria?.[0]?.unit || "mm");
-  const [pointsList, setPointsList] = useState<any[]>(
-    standard?.points || [
+    ];
+    const pts = standard?.points || [
       { category: "外徑", points: "0, 25, 50, 75, 100", unit: "mm" }
-    ]
-  );
+    ];
+
+    const merged: any[] = [];
+    const usedPts = new Set<number>();
+
+    crits.forEach((c: any) => {
+      const ptIdx = pts.findIndex((p: any, i: number) => !usedPts.has(i) && p.category === c.category);
+      let points = "";
+      if (ptIdx !== -1) {
+        points = pts[ptIdx].points;
+        usedPts.add(ptIdx);
+      }
+      merged.push({ ...c, points });
+    });
+
+    pts.forEach((p: any, i: number) => {
+      if (!usedPts.has(i)) {
+        merged.push({ 
+          category: p.category, 
+          rangeStart: "", 
+          rangeEnd: "", 
+          tolerancePlus: "", 
+          toleranceMinus: "", 
+          unit: p.unit, 
+          points: p.points 
+        });
+      }
+    });
+
+    return merged.length > 0 ? merged : [{ category: "", rangeStart: "", rangeEnd: "", tolerancePlus: "", toleranceMinus: "", unit: "", points: "" }];
+  });
+
   const [defaultCycle, setDefaultCycle] = useState<number>(standard?.defaultCycle || 12);
   const [defaultPrecision, setDefaultPrecision] = useState(standard?.defaultPrecision || "");
 
@@ -58,60 +83,64 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
       };
       loadCategories();
 
-      // 當編輯現有標準時，確保狀態與傳入的 prop 同步
       if (standard) {
         setName(standard.name || "");
         setDescription(standard.description || "");
         setDefaultPoints(standard.defaultPoints || "");
         setTargetCategory(standard.targetCategory || "");
         setType(standard.type || "STEPPED");
-        setCriteria(standard.criteria || [{ category: "外徑", rangeStart: 0, rangeEnd: 100, tolerancePlus: 0.02, toleranceMinus: -0.02, unit: "mm" }]);
-        setPointsList(standard.points || [{ category: "外徑", points: "0, 25, 50, 75, 100", unit: "mm" }]);
+        
+        const crits = standard.criteria || [{ category: "外徑", rangeStart: 0, rangeEnd: 100, tolerancePlus: 0.02, toleranceMinus: -0.02, unit: "mm" }];
+        const pts = standard.points || [{ category: "外徑", points: "0, 25, 50, 75, 100", unit: "mm" }];
+        const merged: any[] = [];
+        const usedPts = new Set<number>();
+        crits.forEach((c: any) => {
+          const ptIdx = pts.findIndex((p: any, i: number) => !usedPts.has(i) && p.category === c.category);
+          let points = "";
+          if (ptIdx !== -1) {
+            points = pts[ptIdx].points;
+            usedPts.add(ptIdx);
+          }
+          merged.push({ ...c, points });
+        });
+        pts.forEach((p: any, i: number) => {
+          if (!usedPts.has(i)) {
+            merged.push({ category: p.category, rangeStart: "", rangeEnd: "", tolerancePlus: "", toleranceMinus: "", unit: p.unit, points: p.points });
+          }
+        });
+        setItems(merged.length > 0 ? merged : [{ category: "", rangeStart: "", rangeEnd: "", tolerancePlus: "", toleranceMinus: "", unit: "", points: "" }]);
+
         setDefaultCycle(standard.defaultCycle || 12);
         setDefaultPrecision(standard.defaultPrecision || "");
       }
     }
   }, [isOpen, standard]);
 
-  const handleAddCriterion = () => {
-    const last = criteria[criteria.length - 1];
-    setCriteria([
-      ...criteria, 
+  const handleAddItem = () => {
+    const last = items[items.length - 1];
+    setItems([
+      ...items, 
       { 
         category: last ? last.category : "外徑",
         rangeStart: last ? last.rangeEnd : 0, 
-        rangeEnd: last ? last.rangeEnd + 100 : 100, 
+        rangeEnd: last ? (parseFloat(last.rangeEnd as string) || 0) + 100 : 100, 
         tolerancePlus: last ? last.tolerancePlus : 0.01, 
         toleranceMinus: last ? last.toleranceMinus : -0.01, 
-        unit: last ? last.unit : defaultUnit 
+        unit: last ? last.unit : "mm",
+        points: ""
       }
     ]);
   };
 
-  const handleRemoveCriterion = (idx: number) => {
-    if (criteria.length <= 1) return;
-    setCriteria(criteria.filter((_, i) => i !== idx));
+  const handleRemoveItem = (idx: number) => {
+    if (items.length <= 1) return;
+    setItems(items.filter((_, i) => i !== idx));
   };
 
-  const handleCriterionChange = (idx: number, field: string, val: any) => {
-    const next = [...criteria];
+  const handleItemChange = (idx: number, field: string, val: any) => {
+    const next = [...items];
     next[idx][field] = val;
-    setCriteria(next);
-  };
-
-  const handleAddPointCategory = () => {
-    setPointsList([...pointsList, { category: "", points: "", unit: pointsList[pointsList.length - 1]?.unit || "mm" }]);
-  };
-
-  const handleRemovePointCategory = (idx: number) => {
-    if (pointsList.length <= 1) return;
-    setPointsList(pointsList.filter((_, i) => i !== idx));
-  };
-
-  const handlePointChange = (idx: number, field: string, val: string) => {
-    const next = [...pointsList];
-    next[idx][field] = val;
-    setPointsList(next);
+    setItems(next);
   };
 
   const precisionDecimals = (() => {
@@ -131,16 +160,21 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
       targetCategory,
       defaultPoints, 
       type, 
-      criteria: criteria.map(c => ({
-        ...c,
-        rangeStart: parseFloat(c.rangeStart) || 0,
-        rangeEnd: parseFloat(c.rangeEnd) || 0,
-        tolerancePlus: Math.abs(parseFloat(c.tolerancePlus) || 0),
-        toleranceMinus: -Math.abs(parseFloat(c.toleranceMinus) || 0),
+      criteria: items.filter(i => i.category || i.rangeStart !== "" || i.tolerancePlus !== "").map(i => ({
+        category: i.category,
+        rangeStart: parseFloat(i.rangeStart as any) || 0,
+        rangeEnd: parseFloat(i.rangeEnd as any) || 0,
+        tolerancePlus: Math.abs(parseFloat(i.tolerancePlus as any) || 0),
+        toleranceMinus: -Math.abs(parseFloat(i.toleranceMinus as any) || 0),
+        unit: i.unit
+      })),
+      points: items.filter(i => i.category || i.points).map(i => ({
+        category: i.category,
+        points: i.points,
+        unit: i.unit
       })),
       defaultCycle,
-      defaultPrecision,
-      points: pointsList // This maps to AcceptancePoints model
+      defaultPrecision
     };
 
     try {
@@ -183,7 +217,7 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
 
       {isOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
             <header className="px-8 py-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-kst-blue rounded-xl flex items-center justify-center">
@@ -340,12 +374,7 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
                   />
                 </div>
                 
-                <StandardPointsEditor 
-                  pointsList={pointsList}
-                  onAdd={handleAddPointCategory}
-                  onRemove={handleRemovePointCategory}
-                  onChange={handlePointChange}
-                />
+                {/* Removed StandardPointsEditor */}
 
                 <div className="col-span-2 space-y-1.5">
                   <label className="text-sm font-bold text-slate-700">{t('calibration.cal.description') || '說明'}</label>
@@ -358,13 +387,111 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
                 </div>
               </div>
 
-              <StandardCriteriaEditor 
-                criteria={criteria}
-                precisionDecimals={precisionDecimals}
-                onAdd={handleAddCriterion}
-                onRemove={handleRemoveCriterion}
-                onChange={handleCriterionChange}
-              />
+              {/* Combined Table */}
+              <div className="space-y-2 mt-6">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <ShieldCheck className="w-4 h-4 text-kst-blue" />
+                  <h4 className="text-xs font-black text-kst-blue uppercase tracking-widest">校正與判定設定</h4>
+                </div>
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                      <tr>
+                        <th className="px-3 py-2.5 border-b border-slate-100 w-32">{t('calibration.gage.category')}</th>
+                        <th className="px-3 py-2.5 border-b border-slate-100 w-24">單位</th>
+                        <th className="px-3 py-2.5 border-b border-slate-100">標準範圍</th>
+                        <th className="px-3 py-2.5 border-b border-slate-100">允收公差</th>
+                        <th className="px-3 py-2.5 border-b border-slate-100">預設校正點</th>
+                        <th className="px-3 py-2.5 border-b border-slate-100 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {items.map((item, idx) => (
+                        <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={item.category}
+                              onChange={(e) => handleItemChange(idx, 'category', e.target.value)}
+                              placeholder="例如：外觀"
+                              className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-700"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={item.unit || ""}
+                              onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
+                              placeholder="mm"
+                              className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all text-slate-600"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={item.rangeStart}
+                                onChange={(e) => handleItemChange(idx, 'rangeStart', e.target.value)}
+                                placeholder="0"
+                                className="w-12 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600 text-center"
+                              />
+                              <span className="text-slate-400">-</span>
+                              <input
+                                type="text"
+                                value={item.rangeEnd}
+                                onChange={(e) => handleItemChange(idx, 'rangeEnd', e.target.value)}
+                                placeholder="25"
+                                className="w-12 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600 text-center"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <span className="text-slate-400 font-mono">+</span>
+                              <input
+                                type="text"
+                                value={item.tolerancePlus}
+                                onChange={(e) => handleItemChange(idx, 'tolerancePlus', e.target.value)}
+                                placeholder="0.01"
+                                className="w-14 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-kst-blue font-bold text-center"
+                              />
+                              <span className="text-slate-400 font-mono">/</span>
+                              <input
+                                type="text"
+                                value={item.toleranceMinus}
+                                onChange={(e) => handleItemChange(idx, 'toleranceMinus', e.target.value)}
+                                placeholder="-0.01"
+                                className="w-14 px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-red-500 font-bold text-center"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={item.points}
+                              onChange={(e) => handleItemChange(idx, 'points', e.target.value)}
+                              placeholder="0, 25, 50"
+                              className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={() => handleRemoveItem(idx)} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-kst-blue hover:text-blue-700 transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                >
+                  <Plus className="w-3 h-3" /> 新增項目
+                </button>
+              </div>
 
               <footer className="pt-6 flex gap-4">
                 <button 

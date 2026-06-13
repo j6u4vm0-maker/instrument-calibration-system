@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Plus, X, ClipboardList, CheckCircle2, XCircle, Send, Save, Search } from "lucide-react";
-import { addCalibrationRecordAction, updateCalibrationRecordAction, getMasterGagesAction, getLatestDraftAction } from "@/app/actions/gage-actions";
+import { addCalibrationRecordAction, updateCalibrationRecordAction, getMasterGagesAction, getLatestDraftAction, deleteDraftAction } from "@/app/actions/gage-actions";
 import { uploadReportAction } from "@/app/actions/upload-actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useRouter } from "next/navigation";
 import InternalCalibrationForm from "./InternalCalibrationForm";
+import { SearchableObjectSelect } from "@/components/SearchableObjectSelect";
 
 interface CalibrationModalProps {
   gageId: string;
@@ -75,7 +76,7 @@ export default function CalibrationModal({
               setLocalIsEdit(true);
               setLocalEditData(draft);
             } else {
-              import('@/app/actions/gage-actions').then(m => m.deleteDraftAction(draft.id));
+              deleteDraftAction(draft.id);
             }
           }
         });
@@ -105,6 +106,7 @@ export default function CalibrationModal({
   const [currentCycle, setCurrentCycle] = useState(calibrationCycle);
   const [nextCalDate, setNextCalDate] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [selectedVendorId, setSelectedVendorId] = useState("");
 
   // 當校正日期或週期改變時，自動計算下次校正日期
   useEffect(() => {
@@ -113,6 +115,7 @@ export default function CalibrationModal({
       setCalDate(new Date(localEditData.calDate).toISOString().split('T')[0]);
       setAttachmentUrl(localEditData.attachmentUrl || "");
       setCurrentCycle(localEditData.calibrationCycle || calibrationCycle);
+      setSelectedVendorId(localEditData.vendorId || "");
     }
   }, [localIsEdit, localEditData, calibrationCycle]);
 
@@ -316,16 +319,13 @@ export default function CalibrationModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('calibration.batch.vendor')}</label>
-                  <select 
-                    name="vendorId" 
-                    defaultValue={editData?.vendorId || ""}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-kst-blue/5 outline-none"
-                  >
-                    <option value="">-- {t('calibration.cal.select_vendor_alert')} --</option>
-                    {vendors.map(v => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
-                    ))}
-                  </select>
+                  <SearchableObjectSelect 
+                    options={vendors.map(v => ({ label: v.name, value: v.id, type: 'vendor' }))}
+                    value={selectedVendorId}
+                    onChange={(val) => setSelectedVendorId(val)}
+                    placeholder={`-- ${t('calibration.cal.select_vendor_alert')} --`}
+                  />
+                  <input type="hidden" name="vendorId" value={selectedVendorId} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('calibration.batch.cost')}</label>

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -17,32 +18,29 @@ interface PointItem {
 
 export function CriteriaTable({ text }: { text: string }) {
   const { t } = useLanguage();
-  
+
   const parseCriteria = (input: string): CriteriaItem[] => {
     if (!input) return [];
     return input.split('\n').filter(line => line.trim()).map(line => {
       const parts_colon = line.split(':');
       const left = (parts_colon[0] || "").trim();
       const right = (parts_colon[1] || "").trim();
-      
+
       if (!left && !right) return { category: line, range: "", tolerance: "" };
-      
-      // Smart split: Try to find the range at the end. 
-      // If the left part has spaces, we assume the last segment is the range 
-      // ONLY IF it looks like a range (starts with digit or has ~ or - or unit)
+
       const parts = left.split(' ');
       if (parts.length === 1) {
         return { category: parts[0], range: "", tolerance: right };
       }
-      
+
       const lastPart = parts[parts.length - 1];
       const isRange = /[\d~]/.test(lastPart) || lastPart.toLowerCase().includes('mm') || lastPart.toLowerCase().includes('inch');
-      
+
       if (isRange) {
-        return { 
-          category: parts.slice(0, -1).join(' ').trim(), 
-          range: lastPart, 
-          tolerance: right 
+        return {
+          category: parts.slice(0, -1).join(' ').trim(),
+          range: lastPart,
+          tolerance: right
         };
       } else {
         return { category: left, range: "", tolerance: right };
@@ -124,52 +122,70 @@ export function PointsTable({ text }: { text: string }) {
   );
 }
 
-// --- 編輯器組件 ---
-
-export function CriteriaEditor({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+// --- CriteriaEditor
+export function CriteriaEditor({ value, onChange, availablePointsStr }: { value: string, onChange: (val: string) => void, availablePointsStr?: string }) {
   const { t } = useLanguage();
-  
-  const items: CriteriaItem[] = value.split('\n').filter(line => line.trim()).map(line => {
+
+  // Extract unique categories from calPoints for autocomplete
+  const availableCategories = React.useMemo(() => {
+    if (!availablePointsStr) return [];
+    const lines = availablePointsStr.split('\n').filter(line => line.trim());
+    const cats = lines.map(line => {
+      const catPart = (line.split(':')[0] || "").trim();
+      const unitMatch = catPart.match(/^(.*?)\(/);
+      return unitMatch ? unitMatch[1].trim() : catPart;
+    }).filter(Boolean);
+    return Array.from(new Set(cats));
+  }, [availablePointsStr]);
+
+  const datalistId = "criteria-categories";
+
+  const items: any[] = value.split('\n').filter(line => line.trim()).map(line => {
     const parts_colon = line.split(':');
     const left = (parts_colon[0] || "").trim();
     const right = (parts_colon[1] || "").trim();
-    
-    if (!left && !right) return { category: line, range: "", tolerance: "" };
-    
+
+    if (!left && !right) return { category: "", range: "", unit: "", tolerance: "" };
+
     const parts = left.split(' ');
-    if (parts.length === 1) return { category: parts[0], range: "", tolerance: right };
-    
+    if (parts.length === 1) return { category: parts[0], range: "", unit: "", tolerance: right };
+
     const lastPart = parts[parts.length - 1];
     const isRange = /[\d~]/.test(lastPart) || lastPart.toLowerCase().includes('mm') || lastPart.toLowerCase().includes('inch');
-    
+
     if (isRange) {
-      return { 
-        category: parts.slice(0, -1).join(' ').trim(), 
-        range: lastPart, 
-        tolerance: right 
+      const unitMatch = lastPart.match(/^([\d~.\-]+)(.*)$/);
+      return {
+        category: parts.slice(0, -1).join(' ').trim(),
+        range: unitMatch ? unitMatch[1] : lastPart,
+        unit: unitMatch ? unitMatch[2].trim() : "",
+        tolerance: right
       };
     } else {
-      return { category: left, range: "", tolerance: right };
+      return { category: left, range: "", unit: "", tolerance: right };
     }
   });
 
-  const updateItems = (newItems: CriteriaItem[]) => {
+  const updateItems = (newItems: any[]) => {
     const str = newItems.map(item => {
-      const cat = item.category;
-      const ran = item.range;
-      return `${cat}${ran ? ' ' + ran : ''}: ${item.tolerance}`;
+      const cat = (item.category || "").trim();
+      const ran = (item.range || "").trim();
+      const unt = (item.unit || "").trim();
+      const tol = (item.tolerance || "").trim();
+      if (!cat && !ran && !unt && !tol) return ":";
+      return `${cat}${ran || unt ? ' ' + ran + unt : ''}:${tol ? ' ' + tol : ''}`;
     }).join('\n');
     onChange(str);
   };
 
-  const handleChange = (idx: number, field: keyof CriteriaItem, val: string) => {
+  const handleChange = (idx: number, field: string, val: string) => {
     const newItems = [...items];
     newItems[idx] = { ...newItems[idx], [field]: val };
     updateItems(newItems);
   };
 
   const addRow = () => {
-    updateItems([...items, { category: "", range: "", tolerance: "" }]);
+    updateItems([...items, { category: "", range: "", unit: "", tolerance: "" }]);
   };
 
   const removeRow = (idx: number) => {
@@ -178,11 +194,19 @@ export function CriteriaEditor({ value, onChange }: { value: string, onChange: (
 
   return (
     <div className="space-y-2">
+      {availableCategories.length > 0 && (
+        <datalist id={datalistId}>
+          {availableCategories.map(cat => (
+            <option key={cat} value={cat} />
+          ))}
+        </datalist>
+      )}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
             <tr>
-              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.gage.category')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-32">{t('calibration.gage.category')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-24">單位</th>
               <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.range')}</th>
               <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.tolerance')}</th>
               <th className="px-3 py-2.5 border-b border-slate-100 w-10"></th>
@@ -192,27 +216,37 @@ export function CriteriaEditor({ value, onChange }: { value: string, onChange: (
             {items.map((item, idx) => (
               <tr key={idx} className="group">
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.category} 
+                  <input
+                    type="text"
+                    list={datalistId}
+                    value={item.category}
                     onChange={(e) => handleChange(idx, 'category', e.target.value)}
-                    placeholder="例如：外徑"
+                    placeholder="例如：外觀"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-700"
                   />
                 </td>
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.range} 
+                  <input
+                    type="text"
+                    value={item.unit || ""}
+                    onChange={(e) => handleChange(idx, 'unit', e.target.value)}
+                    placeholder="mm"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all text-slate-600"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={item.range}
                     onChange={(e) => handleChange(idx, 'range', e.target.value)}
-                    placeholder="0-25mm"
+                    placeholder="0-25"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600"
                   />
                 </td>
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.tolerance} 
+                  <input
+                    type="text"
+                    value={item.tolerance}
                     onChange={(e) => handleChange(idx, 'tolerance', e.target.value)}
                     placeholder="+0.01/-0.01"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-kst-blue font-bold"
@@ -228,8 +262,8 @@ export function CriteriaEditor({ value, onChange }: { value: string, onChange: (
           </tbody>
         </table>
       </div>
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={addRow}
         className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-kst-blue hover:text-blue-700 transition-colors px-2 py-1 rounded hover:bg-blue-50"
       >
@@ -266,6 +300,7 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
       const cat = item.category.trim();
       const unitStr = item.unit?.trim() ? `(${item.unit.trim()})` : '';
       const pts = item.points.trim();
+      if (!cat && !unitStr && !pts) return ":";
       return `${cat}${unitStr}${pts ? ': ' + pts : ':'}`;
     }).join('\n');
     onChange(str);
@@ -301,27 +336,27 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
             {items.map((item, idx) => (
               <tr key={idx} className="group">
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.category} 
+                  <input
+                    type="text"
+                    value={item.category}
                     onChange={(e) => handleChange(idx, 'category', e.target.value)}
-                    placeholder="例如：外徑"
+                    placeholder="例如：外觀"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-700"
                   />
                 </td>
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.unit || ""} 
+                  <input
+                    type="text"
+                    value={item.unit || ""}
                     onChange={(e) => handleChange(idx, 'unit', e.target.value)}
                     placeholder="例如：mm"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-500"
                   />
                 </td>
                 <td className="px-2 py-1.5">
-                  <input 
-                    type="text" 
-                    value={item.points} 
+                  <input
+                    type="text"
+                    value={item.points}
                     onChange={(e) => handleChange(idx, 'points', e.target.value)}
                     placeholder="0, 25, 50, 75, 100"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600"
@@ -337,8 +372,233 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
           </tbody>
         </table>
       </div>
-      <button 
-        type="button" 
+      <button
+        type="button"
+        onClick={addRow}
+        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-kst-blue hover:text-blue-700 transition-colors px-2 py-1 rounded hover:bg-blue-50"
+      >
+        <Plus className="w-3 h-3" /> {t('calibration.cal.add_item')}
+      </button>
+    </div>
+  );
+}
+
+// --- CombinedCriteriaPointsEditor
+export function CombinedCriteriaPointsEditor({ 
+  acceptance, 
+  calPoints, 
+  onChangeAcceptance, 
+  onChangeCalPoints,
+  availablePointsStr 
+}: { 
+  acceptance: string, 
+  calPoints: string, 
+  onChangeAcceptance: (val: string) => void, 
+  onChangeCalPoints: (val: string) => void,
+  availablePointsStr?: string 
+}) {
+  const { t } = useLanguage();
+
+  const availableCategories = React.useMemo(() => {
+    if (!availablePointsStr) return [];
+    const lines = availablePointsStr.split('\n').filter(line => line.trim());
+    const cats = lines.map(line => {
+      const catPart = (line.split(':')[0] || "").trim();
+      const unitMatch = catPart.match(/^(.*?)\(/);
+      return unitMatch ? unitMatch[1].trim() : catPart;
+    }).filter(Boolean);
+    return Array.from(new Set(cats));
+  }, [availablePointsStr]);
+
+  const datalistId = "combined-categories";
+
+  const items = React.useMemo(() => {
+    const accLines = acceptance.split('\n').filter(line => line.trim());
+    const parsedAcc = accLines.map(line => {
+      const parts_colon = line.split(':');
+      const left = (parts_colon[0] || "").trim();
+      const right = (parts_colon[1] || "").trim();
+
+      if (!left && !right) return { category: "", range: "", unit: "", tolerance: "" };
+
+      const parts = left.split(' ');
+      if (parts.length === 1) return { category: parts[0], range: "", unit: "", tolerance: right };
+
+      const lastPart = parts[parts.length - 1];
+      const isRange = /[\d~]/.test(lastPart) || lastPart.toLowerCase().includes('mm') || lastPart.toLowerCase().includes('inch');
+
+      if (isRange) {
+        const unitMatch = lastPart.match(/^([\d~.\-]+)(.*)$/);
+        return {
+          category: parts.slice(0, -1).join(' ').trim(),
+          range: unitMatch ? unitMatch[1] : lastPart,
+          unit: unitMatch ? unitMatch[2].trim() : "",
+          tolerance: right
+        };
+      } else {
+        return { category: left, range: "", unit: "", tolerance: right };
+      }
+    });
+
+    const ptLines = calPoints.split('\n').filter(line => line.trim());
+    const parsedPts = ptLines.map(line => {
+      const [categoryStr, ...pointsParts] = line.split(':');
+      let category = (categoryStr || "").trim();
+      let points = pointsParts.join(':').trim();
+      let unit = "";
+
+      const unitMatch = category.match(/^(.*?)\((.*?)\)$/);
+      if (unitMatch) {
+        category = unitMatch[1].trim();
+        unit = unitMatch[2].trim();
+      }
+      return { category, points, unit };
+    });
+
+    const merged: any[] = [];
+    const usedPts = new Set<number>();
+
+    parsedAcc.forEach((acc) => {
+      const ptIdx = parsedPts.findIndex((p, i) => !usedPts.has(i) && p.category === acc.category);
+      let pts = "";
+      if (ptIdx !== -1) {
+        pts = parsedPts[ptIdx].points;
+        usedPts.add(ptIdx);
+      }
+      merged.push({ ...acc, points: pts });
+    });
+
+    parsedPts.forEach((pt, i) => {
+      if (!usedPts.has(i)) {
+        merged.push({ category: pt.category, range: "", unit: pt.unit, tolerance: "", points: pt.points });
+      }
+    });
+
+    if (merged.length === 0) {
+      merged.push({ category: "", range: "", unit: "", tolerance: "", points: "" });
+    }
+
+    return merged;
+  }, [acceptance, calPoints]);
+
+  const updateItems = (newItems: any[]) => {
+    const accStr = newItems.map(item => {
+      const cat = (item.category || "").trim();
+      const ran = (item.range || "").trim();
+      const unt = (item.unit || "").trim();
+      const tol = (item.tolerance || "").trim();
+      if (!cat && !ran && !unt && !tol) return ":";
+      return `${cat}${ran || unt ? ' ' + ran + unt : ''}:${tol ? ' ' + tol : ''}`;
+    }).join('\n');
+    onChangeAcceptance(accStr);
+
+    const ptsStr = newItems.map(item => {
+      const cat = (item.category || "").trim();
+      const unt = (item.unit || "").trim();
+      const pts = (item.points || "").trim();
+      if (!cat && !pts && !unt) return ":";
+      const unitStr = unt ? `(${unt})` : '';
+      return `${cat}${unitStr}${pts ? ': ' + pts : ':'}`;
+    }).join('\n');
+    onChangeCalPoints(ptsStr);
+  };
+
+  const handleChange = (idx: number, field: string, val: string) => {
+    const newItems = [...items];
+    newItems[idx] = { ...newItems[idx], [field]: val };
+    updateItems(newItems);
+  };
+
+  const addRow = () => {
+    updateItems([...items, { category: "", range: "", unit: "", tolerance: "", points: "" }]);
+  };
+
+  const removeRow = (idx: number) => {
+    updateItems(items.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="space-y-2">
+      {availableCategories.length > 0 && (
+        <datalist id={datalistId}>
+          {availableCategories.map(cat => (
+            <option key={cat} value={cat} />
+          ))}
+        </datalist>
+      )}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+            <tr>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-32">{t('calibration.gage.category')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-24">單位</th>
+              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.range')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.cal.std.tolerance')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.gage.points')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-10"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {items.map((item, idx) => (
+              <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    list={datalistId}
+                    value={item.category}
+                    onChange={(e) => handleChange(idx, 'category', e.target.value)}
+                    placeholder="例如：外觀"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-700"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={item.unit || ""}
+                    onChange={(e) => handleChange(idx, 'unit', e.target.value)}
+                    placeholder="mm"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all text-slate-600"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={item.range}
+                    onChange={(e) => handleChange(idx, 'range', e.target.value)}
+                    placeholder="0-25"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={item.tolerance}
+                    onChange={(e) => handleChange(idx, 'tolerance', e.target.value)}
+                    placeholder="+0.01/-0.01"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-kst-blue font-bold"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input
+                    type="text"
+                    value={item.points}
+                    onChange={(e) => handleChange(idx, 'points', e.target.value)}
+                    placeholder="0, 25, 50"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-mono text-slate-600"
+                  />
+                </td>
+                <td className="px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button type="button" onClick={() => removeRow(idx)} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
         onClick={addRow}
         className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-kst-blue hover:text-blue-700 transition-colors px-2 py-1 rounded hover:bg-blue-50"
       >
