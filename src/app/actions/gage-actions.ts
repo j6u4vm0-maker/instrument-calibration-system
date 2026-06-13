@@ -72,9 +72,11 @@ export async function addCalibrationRecordAction(formData: FormData) {
         details = rawDetails.map(d => ({
           category: d.category || d.type || "",
           point: String(d.point || ""),
-          standard: d.standard !== undefined ? parseFloat(d.standard) : undefined,
-          actual: d.actual !== undefined ? parseFloat(d.actual) : undefined,
-          error: d.error !== undefined ? parseFloat(d.error) : undefined,
+          lowerLimit: d.lowerLimit !== undefined && d.lowerLimit !== "" && !isNaN(parseFloat(d.lowerLimit)) ? parseFloat(d.lowerLimit) : null,
+          upperLimit: d.upperLimit !== undefined && d.upperLimit !== "" && !isNaN(parseFloat(d.upperLimit)) ? parseFloat(d.upperLimit) : null,
+          standard: d.standard !== undefined && d.standard !== "" && !isNaN(parseFloat(d.standard)) ? parseFloat(d.standard) : null,
+          actual: d.actual !== undefined && d.actual !== "" && !isNaN(parseFloat(d.actual)) ? parseFloat(d.actual) : null,
+          error: d.error !== undefined && d.error !== "" && !isNaN(parseFloat(d.error)) ? parseFloat(d.error) : null,
           result: d.result || "PASS"
         }));
       }
@@ -240,6 +242,39 @@ export async function reviewCalibrationRecordAction(
   revalidatePath("/reports");
   revalidatePath("/gages");
   revalidatePath("/");
+}
+
+export async function getLatestDraftAction(gageId: string) {
+  try {
+    const draft = await prisma.calibrationRecord.findFirst({
+      where: {
+        gageId,
+        status: 'DRAFT',
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        details: true
+      }
+    });
+    return draft;
+  } catch (error) {
+    console.error("Failed to fetch latest draft:", error);
+    return null;
+  }
+}
+
+export async function deleteDraftAction(draftId: string) {
+  try {
+    await prisma.calibrationRecord.delete({
+      where: { id: draftId }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete draft:", error);
+    return { success: false };
+  }
 }
 
 export async function batchDeleteGagesAction(ids: string[]) {

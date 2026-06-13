@@ -137,9 +137,11 @@ export default function RoundBarEditModal({ roundBar }: { roundBar: any }) {
                   </div>
                   <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
                     <GageOrganizationSelector 
-                      defaultLocationId={roundBar.locationId}
-                      defaultDepartmentId={roundBar.departmentId}
-                      defaultManagerId={roundBar.managerId}
+                      initialData={{
+                        locationId: roundBar.locationId,
+                        departmentId: roundBar.departmentId,
+                        managerId: roundBar.managerId
+                      }}
                     />
                     
                     <div className="mt-6">

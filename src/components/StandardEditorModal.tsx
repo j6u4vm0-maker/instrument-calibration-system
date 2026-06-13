@@ -95,7 +95,7 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
 
   const handleCriterionChange = (idx: number, field: string, val: any) => {
     const next = [...criteria];
-    next[idx][field] = field.includes('tolerance') || field.includes('range') ? parseFloat(val) || 0 : val;
+    next[idx][field] = val;
     setCriteria(next);
   };
 
@@ -131,7 +131,13 @@ export default function StandardEditorModal({ standard }: StandardEditorModalPro
       targetCategory,
       defaultPoints, 
       type, 
-      criteria,
+      criteria: criteria.map(c => ({
+        ...c,
+        rangeStart: parseFloat(c.rangeStart) || 0,
+        rangeEnd: parseFloat(c.rangeEnd) || 0,
+        tolerancePlus: Math.abs(parseFloat(c.tolerancePlus) || 0),
+        toleranceMinus: -Math.abs(parseFloat(c.toleranceMinus) || 0),
+      })),
       defaultCycle,
       defaultPrecision,
       points: pointsList // This maps to AcceptancePoints model

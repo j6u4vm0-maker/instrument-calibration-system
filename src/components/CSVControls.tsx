@@ -5,11 +5,12 @@ import { Upload, Download, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { importGagesAction } from '@/app/actions/gage-actions';
 import { importFixturesAction } from '@/app/actions/fixture-actions';
+import { importRoundBarsAction } from '@/app/actions/roundbar-actions';
 import * as XLSX from 'xlsx';
 import { useSearchParams } from 'next/navigation';
 
 type CSVControlsProps = {
-  type?: 'gage' | 'fixture';
+  type?: 'gage' | 'fixture' | 'round-bar';
   itemLabel?: string;
   uploadLabel?: string;
   downloadLabel?: string;
@@ -37,7 +38,10 @@ export function CSVControls({
   }, []);
 
   const labels = useMemo(() => {
-    const resolvedItemLabel = itemLabel || (type === 'gage' ? t('calibration.gage.list') : '檢具清單');
+    const defaultLabel = type === 'gage' ? t('calibration.gage.list') 
+                       : type === 'round-bar' ? '圓棒清單'
+                       : '檢具清單';
+    const resolvedItemLabel = itemLabel || defaultLabel;
     return {
       uploadText: uploadLabel || `${t('common.common.upload')} ${resolvedItemLabel}`,
       downloadText: downloadLabel || `${t('common.common.download')} ${resolvedItemLabel}`,
@@ -84,25 +88,27 @@ export function CSVControls({
 
       if (type === 'gage') {
         const parsedData = jsonData.map(row => ({
-          id: parseText(row['ID'] || row.id || row['儀器設備編號']),
-          name: parseText(row['Name'] || row.name || row['儀器設備名稱']),
-          spec: parseText(row['Spec'] || row.spec || row['廠牌']),
-          category: parseText(row['Category'] || row.category || row['類別']),
-          location: parseText(row['Location'] || row.location || row['部門']),
-          department: parseText(row['Department'] || row.department || row['部門']),
-          custodian: parseText(row['Custodian'] || row.custodian),
-          precision: parseText(row['Precision'] || row.precision || row['精度']),
-          usageRange: parseText(row['Range'] || row.usageRange || row['使用範圍']),
-          calPoints: parseBlock(row['CalPoints'] || row.calPoints || row['校正點位']),
-          acceptance: parseBlock(row['Acceptance'] || row.acceptance || row['校驗標準']),
+          id: parseText(row['儀器設備編號/ID'] || row['ID'] || row.id || row['儀器設備編號']),
+          name: parseText(row['儀器設備名稱/Name'] || row['Name'] || row.name || row['儀器設備名稱']),
+          spec: parseText(row['廠牌規格/Spec'] || row['Spec'] || row.spec || row['廠牌']),
+          category: parseText(row['類別/Category'] || row['Category'] || row.category || row['類別']),
+          location: parseText(row['廠區/Location'] || row['Location'] || row.location || row['廠區'] || row['部門']),
+          department: parseText(row['部門/Department'] || row['Department'] || row.department || row['部門']),
+          custodian: parseText(row['保管人/Custodian'] || row['Custodian'] || row.custodian || row['保管人']),
+          manager: parseText(row['管理者/Manager'] || row['Manager'] || row.manager || row['管理者']),
+          vendor: parseText(row['供應商/Vendor'] || row['Vendor'] || row.vendor || row['供應商']),
+          precision: parseText(row['精度/Precision'] || row['Precision'] || row.precision || row['精度']),
+          usageRange: parseText(row['使用範圍/UsageRange'] || row['Range'] || row.usageRange || row['使用範圍']),
+          calPoints: parseBlock(row['校正點位/CalPoints'] || row['CalPoints'] || row.calPoints || row['校正點位']),
+          acceptance: parseBlock(row['校驗標準/Acceptance'] || row['Acceptance'] || row.acceptance || row['校驗標準']),
           tafLogo: parseText(row['TAF Logo'] || row.tafLogo),
-          entryDate: parseExcelDate(row['EntryDate'] || row.entryDate || row['入廠日期']),
-          calType: parseText(row['CalType'] || row.calType || row['校驗類別']) || 'INTERNAL',
-          calibrationCycle: parseInt(parseText(row['Cycle'] || row.calibrationCycle || row['校驗週期'] || '12'), 10),
-          lastCalDate: parseExcelDate(row['LastCalDate'] || row.lastCalDate || row['上次校正日']),
-          nextCalDate: parseExcelDate(row['NextCalDate'] || row.nextCalDate || row['預計校正日']),
-          status: parseText(row['Status'] || row.status || row['狀態']) || 'IN_USE',
-          notes: parseBlock(row['Notes'] || row.notes || row['備註']),
+          entryDate: parseExcelDate(row['入廠日期/EntryDate'] || row['EntryDate'] || row.entryDate || row['入廠日期']),
+          calType: parseText(row['校正類別/CalType'] || row['CalType'] || row.calType || row['校驗類別']) || 'INTERNAL',
+          calibrationCycle: parseInt(parseText(row['校正週期(月)/Cycle'] || row['Cycle'] || row.calibrationCycle || row['校驗週期'] || '12'), 10),
+          lastCalDate: parseExcelDate(row['上次校正日/LastCalDate'] || row['LastCalDate'] || row.lastCalDate || row['上次校正日']),
+          nextCalDate: parseExcelDate(row['下次校正日/NextCalDate'] || row['NextCalDate'] || row.nextCalDate || row['預計校正日']),
+          status: parseText(row['狀態/Status'] || row['Status'] || row.status || row['狀態']) || 'IN_USE',
+          notes: parseBlock(row['備註/Notes'] || row['Notes'] || row.notes || row['備註']),
         })).filter(row => row.id && row.name);
 
         if (parsedData.length === 0) {
@@ -113,38 +119,38 @@ export function CSVControls({
         const result = await importGagesAction(parsedData);
         alert(`匯入成功！\n新增: ${result.imported}\n更新: ${result.updated}`);
         window.location.reload();
-      } else {
+      } else if (type === 'fixture') {
         const parsedData = jsonData.map(row => {
-          const serialNo = parseText(row['版次/序號'] || row['SerialNo'] || row.serialNo);
-          const baseId = parseText(row['儀器設備編號'] || row['ID'] || row.id);
+          const serialNo = parseText(row['版次序號/SerialNo'] || row['版次/序號'] || row['SerialNo'] || row.serialNo);
+          const baseId = parseText(row['管理編號/ID'] || row['儀器設備編號'] || row['ID'] || row.id);
           const id = baseId
             ? (baseId.includes('(') ? baseId : (serialNo ? `${baseId}${serialNo.startsWith('(') ? serialNo : `(${serialNo})`}` : baseId))
             : '';
 
           return {
             id,
-            name: parseBlock(row['儀器設備名稱'] || row['Name'] || row.name),
+            name: parseBlock(row['設備名稱/Name'] || row['儀器設備名稱'] || row['Name'] || row.name),
             serialNo,
-            brand: parseText(row['廠牌'] || row['Brand'] || row.brand),
-            applicablePart: parseBlock(row['適用料號'] || row['ApplicablePart'] || row.applicablePart),
-            drawingNo: parseBlock(row['對應圖號 / 檢驗書'] || row['DrawingNo'] || row.drawingNo),
-            manual: parseBlock(row['使用說明書'] || row['Manual'] || row.manual),
-            category: parseText(row['類別'] || row['Category'] || row.category),
-            precision: parseText(row['精度'] || row['Precision'] || row.precision),
+            brand: parseText(row['廠牌規格/Spec'] || row['廠牌'] || row['Brand'] || row.brand),
+            applicablePart: parseBlock(row['適用料號/ApplicablePart'] || row['適用料號'] || row['ApplicablePart'] || row.applicablePart),
+            drawingNo: parseBlock(row['對應圖號/DrawingNo'] || row['對應圖號 / 檢驗書'] || row['DrawingNo'] || row.drawingNo),
+            manual: parseBlock(row['使用說明書/Manual'] || row['使用說明書'] || row['Manual'] || row.manual),
+            category: parseText(row['類別/Category'] || row['類別'] || row['Category'] || row.category),
+            precision: parseText(row['精度/Precision'] || row['精度'] || row['Precision'] || row.precision),
             displayType: parseText(row['顯示'] || row['Display'] || row.displayType),
-            calType: parseText(row['校驗類別'] || row['CalType'] || row.calType) || 'INTERNAL',
-            calibrationCycle: parseInt(parseText(row['校驗週期'] || row['Cycle'] || row.calibrationCycle || '12'), 10),
-            lastCalDate: parseExcelDate(row['上次校正日'] || row['LastCalDate'] || row.lastCalDate),
-            nextCalDate: parseExcelDate(row['預計校正日'] || row['NextCalDate'] || row.nextCalDate),
-            calPoints: parseBlock(row['校正點位'] || row['CalPoints'] || row.calPoints),
+            calType: parseText(row['校正類別/CalType'] || row['校驗類別'] || row['CalType'] || row.calType) || 'INTERNAL',
+            calibrationCycle: parseInt(parseText(row['校正週期(月)/Cycle'] || row['校驗週期'] || row['Cycle'] || row.calibrationCycle || '12'), 10),
+            lastCalDate: parseExcelDate(row['上次校正/LastCalDate'] || row['上次校正日'] || row['LastCalDate'] || row.lastCalDate),
+            nextCalDate: parseExcelDate(row['下次校正/NextCalDate'] || row['預計校正日'] || row['NextCalDate'] || row.nextCalDate),
+            calPoints: parseBlock(row['校正點/CalPoints'] || row['校正點位'] || row['CalPoints'] || row.calPoints),
             tafLogo: parseText(row['TAF Logo'] || row.tafLogo),
-            entryDate: parseExcelDate(row['入廠日期'] || row['EntryDate'] || row.entryDate),
-            status: parseText(row['狀態'] || row['Status'] || row.status) || 'IN_USE',
-            notes: parseBlock(row['備註'] || row['Notes'] || row.notes),
-            department: parseText(row['部門'] || row['Department'] || row.department),
-            manager: parseText(row['管理者'] || row['Manager'] || row.manager),
-            vendor: parseText(row['供應商'] || row['Vendor'] || row.vendor),
-            rdIssuer: parseText(row['RD發行人'] || row['RDIssuer'] || row.rdIssuer),
+            entryDate: parseExcelDate(row['入廠日期/EntryDate'] || row['入廠日期'] || row['EntryDate'] || row.entryDate),
+            status: parseText(row['狀態/Status'] || row['狀態'] || row['Status'] || row.status) || 'IN_USE',
+            notes: parseBlock(row['備註/Notes'] || row['備註'] || row['Notes'] || row.notes),
+            department: parseText(row['部門/Department'] || row['部門'] || row['Department'] || row.department),
+            manager: parseText(row['管理者/Manager'] || row['管理者'] || row['Manager'] || row.manager),
+            vendor: parseText(row['供應商/Vendor'] || row['供應商'] || row['Vendor'] || row.vendor),
+            rdIssuer: parseText(row['RD發行人/RDIssuer'] || row['RD發行人'] || row['RDIssuer'] || row.rdIssuer),
           };
         }).filter(row => row.id && row.name);
 
@@ -160,6 +166,37 @@ export function CSVControls({
         } else {
           alert(`匯入失敗：${result.error}`);
         }
+      } else if (type === 'round-bar') {
+        const parsedData = jsonData.map(row => {
+          const id = parseText(row['儀器設備編號/ID'] || row['ID'] || row.id || row['儀器設備編號']);
+          return {
+            id,
+            name: parseBlock(row['儀器設備名稱/Name'] || row['Name'] || row.name || row['儀器設備名稱']),
+            spec: parseText(row['廠牌規格/Spec'] || row['Spec'] || row.spec || row['廠牌']),
+            usageRange: parseText(row['使用範圍/UsageRange'] || row['Range'] || row.usageRange || row['使用範圍']),
+            location: parseText(row['廠區/Location'] || row['Location'] || row.location || row['廠區']),
+            department: parseText(row['部門/Department'] || row['Department'] || row.department || row['部門']),
+            manager: parseText(row['管理者/Manager'] || row['Manager'] || row.manager || row['管理者']),
+            calPoint1: parseText(row['校正點1/CalPoint1'] || row['CalPoint1'] || row.calPoint1 || row['校正點1']),
+            calPoint2: parseText(row['校正點2/CalPoint2'] || row['CalPoint2'] || row.calPoint2 || row['校正點2']),
+            rdIssuer: parseText(row['RD發行人/RDIssuer'] || row['RD發行人'] || row['RDIssuer'] || row.rdIssuer),
+            entryDate: parseExcelDate(row['入廠日期/EntryDate'] || row['EntryDate'] || row.entryDate || row['入廠日期']),
+            calibrationCycle: parseInt(parseText(row['校正週期(月)/Cycle'] || row['Cycle'] || row.calibrationCycle || row['校驗週期'] || '12'), 10),
+            lastCalDate: parseExcelDate(row['上次校正日/LastCalDate'] || row['LastCalDate'] || row.lastCalDate || row['上次校正日']),
+            nextCalDate: parseExcelDate(row['下次校正日/NextCalDate'] || row['NextCalDate'] || row.nextCalDate || row['預計校正日']),
+            status: parseText(row['狀態/Status'] || row['Status'] || row.status || row['狀態']) || 'IN_USE',
+            notes: parseBlock(row['備註/Notes'] || row['Notes'] || row.notes || row['備註']),
+          };
+        }).filter(row => row.id && row.name);
+
+        if (parsedData.length === 0) {
+          alert('匯入失敗：找不到可用的圓棒資料。');
+          return;
+        }
+
+        const result: any = await importRoundBarsAction(parsedData);
+        alert(`匯入成功！\n新增: ${result.imported}\n更新: ${result.updated}`);
+        window.location.reload();
       }
     } catch (error) {
       console.error('Import failed:', error);

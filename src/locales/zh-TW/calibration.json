@@ -154,7 +154,11 @@
     "std": {
       "range": "標準範圍",
       "tolerance": "允收公差"
-    }
+    },
+    "add_standard": "新增標準件",
+    "no_standard_selected": "尚未關聯任何內部標準件",
+    "acceptance_standard": "允收標準設定",
+    "version": "版本"
   },
   "batch": {
     "vendor": "校正廠商",

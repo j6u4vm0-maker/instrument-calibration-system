@@ -150,7 +150,11 @@
     "std": {
       "range": "Std. Range",
       "tolerance": "Std. Tolerance"
-    }
+    },
+    "add_standard": "Add Standard",
+    "no_standard_selected": "No standard selected",
+    "acceptance_standard": "Acceptance Standard",
+    "version": "Version"
   },
   "batch": {
     "vendor": "Cal Vendor",

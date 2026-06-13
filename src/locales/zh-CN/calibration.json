@@ -136,7 +136,15 @@
     "more_items": "更多...",
     "linked_gages": "台仪器关联",
     "no_standards_yet": "尚未建立允收标准",
-    "click_plus_to_add": "点击右上角按钮开始建立您的第一个标准"
+    "click_plus_to_add": "点击右上角按钮开始建立您的第一个标准",
+    "std": {
+      "range": "标准范围",
+      "tolerance": "允收公差"
+    },
+    "add_standard": "新增标准件",
+    "no_standard_selected": "尚未关联任何内部标准件",
+    "acceptance_standard": "允收标准设定",
+    "version": "版本"
   },
   "batch": {
     "vendor": "校准厂商",

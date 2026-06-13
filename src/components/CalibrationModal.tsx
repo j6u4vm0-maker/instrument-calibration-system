@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, X, ClipboardList, CheckCircle2, XCircle, Send, Save, Search } from "lucide-react";
-import { addCalibrationRecordAction, updateCalibrationRecordAction, getMasterGagesAction } from "@/app/actions/gage-actions";
+import { addCalibrationRecordAction, updateCalibrationRecordAction, getMasterGagesAction, getLatestDraftAction } from "@/app/actions/gage-actions";
 import { uploadReportAction } from "@/app/actions/upload-actions";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useRouter } from "next/navigation";
@@ -49,18 +49,39 @@ export default function CalibrationModal({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(isOpenExternal || false);
   const [masterGages, setMasterGages] = useState<any[]>([]);
+  const [localIsEdit, setLocalIsEdit] = useState(isEdit);
+  const [localEditData, setLocalEditData] = useState(editData);
 
-  const isReadOnly = isEdit && editData?.status === 'APPROVED' && role !== 'admin';
+  const isReadOnly = localIsEdit && localEditData?.status === 'APPROVED' && role !== 'admin';
 
   useEffect(() => {
     if (isOpenExternal !== undefined) setIsOpen(isOpenExternal);
   }, [isOpenExternal]);
 
   useEffect(() => {
+    setLocalIsEdit(isEdit);
+    setLocalEditData(editData);
+  }, [isEdit, editData]);
+
+  useEffect(() => {
     if (isOpen) {
       getMasterGagesAction().then(setMasterGages);
+
+      // Auto-resume draft feature when opened externally or internally
+      if (!isEdit && !localIsEdit) {
+        getLatestDraftAction(gageId).then(draft => {
+          if (draft) {
+            if (confirm("發現一份尚未完成的草稿，是否繼續編輯？\n(按確定繼續編輯，按取消則捨棄舊草稿開啟全新報告)")) {
+              setLocalIsEdit(true);
+              setLocalEditData(draft);
+            } else {
+              import('@/app/actions/gage-actions').then(m => m.deleteDraftAction(draft.id));
+            }
+          }
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isEdit, localIsEdit, gageId]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -68,7 +89,7 @@ export default function CalibrationModal({
   };
 
   const handleOpen = () => {
-    if (isCalibrating) {
+    if (isCalibrating && !isEdit) {
       if (!confirm(t('calibration.cal.is_calibrating_alert') || "此設備目前已有一份正在處理/審核中的報告，確認要再新增一份新的歷程嗎？")) {
         return;
       }
@@ -87,13 +108,13 @@ export default function CalibrationModal({
 
   // 當校正日期或週期改變時，自動計算下次校正日期
   useEffect(() => {
-    if (isEdit && editData) {
-      setReportType(editData.reportType || 'INTERNAL');
-      setCalDate(new Date(editData.calDate).toISOString().split('T')[0]);
-      setAttachmentUrl(editData.attachmentUrl || "");
-      setCurrentCycle(editData.calibrationCycle || calibrationCycle);
+    if (localIsEdit && localEditData) {
+      setReportType(localEditData.reportType || 'INTERNAL');
+      setCalDate(new Date(localEditData.calDate).toISOString().split('T')[0]);
+      setAttachmentUrl(localEditData.attachmentUrl || "");
+      setCurrentCycle(localEditData.calibrationCycle || calibrationCycle);
     }
-  }, [isEdit, editData, calibrationCycle]);
+  }, [localIsEdit, localEditData, calibrationCycle]);
 
   useEffect(() => {
     if (calDate && currentCycle) {
@@ -118,15 +139,21 @@ export default function CalibrationModal({
       formData.set("calibrationCycle", currentCycle.toString());
       formData.set("nextCalDate", nextCalDate);
 
-      if (isEdit && editData) {
-        await updateCalibrationRecordAction(editData.id, {
+      if (localIsEdit && localEditData) {
+        await updateCalibrationRecordAction(localEditData.id, {
           ...data,
+          status,
           calibrationCycle: currentCycle,
           nextCalDate
         });
       } else {
         await addCalibrationRecordAction(formData);
       }
+      
+      if (status === 'DRAFT') {
+        alert("草稿已成功儲存！");
+      }
+
       router.refresh();
       handleClose();
     } catch (error) {
@@ -157,28 +184,18 @@ export default function CalibrationModal({
     }
 
     try {
-      if (isEdit && editData) {
-        await updateCalibrationRecordAction(editData.id, {
-          calDate: new Date(formData.get("calDate") as string),
-          result: formData.get("result") as string,
-          inspector: formData.get("inspector") as string,
-          reportType: "EXTERNAL",
-          certificateNo: formData.get("certificateNo") as string,
-          notes: formData.get("notes") as string,
-          attachmentUrl: attachmentUrl,
-          calibrationCycle: currentCycle,
-          nextCalDate,
-          status: status,
-          vendorId: formData.get("vendorId") as string,
-          cost: parseFloat(formData.get("cost") as string || "0")
-        });
+      if (localIsEdit && localEditData) {
+        await updateCalibrationRecordAction(localEditData.id, Object.fromEntries(formData));
       } else {
         await addCalibrationRecordAction(formData);
+      }
+      if (status === 'DRAFT') {
+        alert("草稿已成功儲存！");
       }
       router.refresh();
       handleClose();
     } catch (error) {
-      alert((t('calibration.cal.import_failed') || "Submission failed") + ": " + (error instanceof Error ? error.message : "unknown error"));
+      alert("Submission failed: " + (error instanceof Error ? error.message : "unknown error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -204,10 +221,10 @@ export default function CalibrationModal({
               <ClipboardList className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800">{isEdit ? t('calibration.cal.edit_report') : t('calibration.cal.new_report')}</h2>
+              <h2 className="text-xl font-black text-slate-800">{localIsEdit ? t('calibration.cal.edit_report') : t('calibration.cal.new_report')}</h2>
               <p className="text-xs text-slate-400 font-bold tracking-wider uppercase">
                 {gageId} {gageName ? `| ${gageName}` : ''} 
-                <span className="ml-2 text-red-500">[{role} / {editData?.status}]</span>
+                <span className="ml-2 text-red-500">[{role} / {localEditData?.status}]</span>
               </p>
             </div>
           </div>
@@ -216,25 +233,27 @@ export default function CalibrationModal({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
-          {/* Report Type Toggle */}
+        <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+          {/* Header Action Tabs */}
           <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-8">
             <button
               onClick={() => setReportType('INTERNAL')}
+              disabled={isReadOnly}
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 reportType === 'INTERNAL' 
-                  ? 'bg-white text-kst-blue shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-kst-blue shadow-md' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
               {t('calibration.cal.internal_report')}
             </button>
             <button
               onClick={() => setReportType('EXTERNAL')}
+              disabled={isReadOnly}
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 reportType === 'EXTERNAL' 
-                  ? 'bg-white text-kst-blue shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-kst-blue shadow-md' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
               {t('calibration.cal.external_report')}
@@ -252,7 +271,7 @@ export default function CalibrationModal({
               }}
               masterGages={masterGages}
               isSubmitting={isSubmitting}
-              initialData={isEdit ? editData : null}
+              initialData={localIsEdit ? localEditData : null}
               onSubmit={handleInternalSubmit}
               onCancel={handleClose}
               isReadOnly={isReadOnly}

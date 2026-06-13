@@ -17,6 +17,7 @@ import { StatusCell } from "@/components/StatusCell";
 import { deleteRoundBarAction } from "@/app/actions/roundbar-actions";
 import { useRouter } from "next/navigation";
 import RoundBarEditModal from "./RoundBarEditModal";
+import { CSVControls } from "./CSVControls";
 
 interface RoundBarTableProps {
   roundBars: any[];
@@ -101,6 +102,8 @@ export default function RoundBarTable({ roundBars }: RoundBarTableProps) {
       
       {/* Column Selector */}
       <div className="p-4 border-b border-slate-50 flex justify-end items-center gap-3 relative">
+        <CSVControls type="round-bar" itemLabel={t('roundBar.title') || '圓棒清單'} />
+        
         <button 
           onClick={() => setIsSelectorOpen(!isSelectorOpen)}
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg border border-slate-200 transition-all"

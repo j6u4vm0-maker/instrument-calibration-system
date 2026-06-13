@@ -40,3 +40,11 @@ export async function deleteRoundBarAction(id: string) {
     return { success: false, error: error.message || "刪除圓棒失敗" };
   }
 }
+
+export async function importRoundBarsAction(data: any[]) {
+  const result = await RoundBarService.bulkImportRoundBars(data);
+  revalidatePath("/round-bar");
+  revalidatePath("/");
+  return result;
+}
+

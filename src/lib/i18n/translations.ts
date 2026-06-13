@@ -127,6 +127,15 @@ export const dictionary = {
     reject:        { en: 'Reject',             zh: '退回' },
     reject_reason: { en: 'Enter reject reason', zh: '請輸入退回理由' },
     print:         { en: 'Print Report',       zh: '列印內校報告' },
+    add_standard:  { en: 'Add Standard',       zh: '加入標準件' },
+    no_standard_selected: { en: 'No standard selected', zh: '尚未關聯任何內部標準件' },
+    acceptance_standard: { en: 'Acceptance Standard', zh: '允收標準設定' },
+    version:       { en: 'Version',            zh: '版本' },
+    std_criteria:  { en: 'Criteria',           zh: '判定基準' },
+    lower_limit:   { en: 'Lower Limit',        zh: '下限' },
+    upper_limit:   { en: 'Upper Limit',        zh: '上限' },
+    traceability:  { en: 'Traceability',       zh: '追溯性' },
+    internal_standard: { en: 'Internal Standard', zh: '內部標準件' },
   },
 
   // --- Batch Calibration ---

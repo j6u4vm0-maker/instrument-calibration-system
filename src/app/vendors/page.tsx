@@ -67,98 +67,114 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vendors.map((vendor) => (
-          <div key={vendor.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
-            <div className="p-6 space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-kst-blue group-hover:text-white transition-colors">
-                  <Building className="w-6 h-6" />
-                </div>
-                <div className="flex gap-2">
-                   <form action={deleteVendorAction.bind(null, vendor.id)}>
-                      <button className="text-xs text-slate-400 hover:text-red-500 font-bold">{t('common.common.delete')}</button>
-                   </form>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">{vendor.name}</h3>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  {vendor.vendorCode && (
-                    <span className="inline-flex items-center gap-1">
-                      <Hash className="w-3 h-3" />
-                      {vendor.vendorCode}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    {vendor.contact || t('common.common.unassigned')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                {vendor.phone && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Phone className="w-4 h-4 text-slate-400" />
-                    {vendor.phone}
-                  </div>
-                )}
-                {vendor.mobile && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Smartphone className="w-4 h-4 text-slate-400" />
-                    {vendor.mobile}
-                  </div>
-                )}
-                {vendor.email && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                    <span className="truncate">{vendor.email}</span>
-                  </div>
-                )}
-                {vendor.address && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    <span className="truncate">{vendor.address}</span>
-                  </div>
-                )}
-                {vendor.website && (
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Globe className="w-4 h-4 text-slate-400" />
-                    <a href={vendor.website} target="_blank" rel="noreferrer" className="truncate text-kst-blue hover:underline">
-                      {vendor.website}
-                    </a>
-                  </div>
-                )}
-                {vendor.serviceScope && (
-                  <div className="flex items-start gap-3 text-sm text-slate-600">
-                    <FileText className="mt-0.5 w-4 h-4 text-slate-400" />
-                    <span className="line-clamp-2">{vendor.serviceScope}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center">
-              <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                <History className="w-3 h-3" />
-                {t('calibration.cal.history')}: {vendor.records?.length || 0}
-              </div>
-              <Link href={`/vendors/${vendor.id}`} className="text-xs font-bold text-kst-blue hover:underline flex items-center gap-1">
-                {t('common.common.details')} <ExternalLink className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        ))}
-        
-        {vendors.length === 0 && (
-          <div className="col-span-full py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-            <Building className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-medium">{t('quality.vendor.no_data')}</p>
-            <Link href="/vendors/new" className="text-kst-blue font-bold mt-2 inline-block hover:underline">{t('quality.vendor.add')}</Link>
-          </div>
-        )}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="px-6 py-4 font-bold text-slate-500">{t('quality.vendor.name')}</th>
+                <th className="px-6 py-4 font-bold text-slate-500">{t('quality.vendor.contact')}</th>
+                <th className="px-6 py-4 font-bold text-slate-500">{t('quality.vendor.phone')}</th>
+                <th className="px-6 py-4 font-bold text-slate-500">{t('quality.vendor.email')}</th>
+                <th className="px-6 py-4 font-bold text-slate-500">{t('calibration.cal.history')}</th>
+                <th className="px-6 py-4 font-bold text-slate-500 w-24 text-center">{t('common.common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vendors.map((vendor) => (
+                <tr key={vendor.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg text-kst-blue">
+                        <Building className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800">{vendor.name}</div>
+                        {vendor.vendorCode && (
+                          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            {vendor.vendorCode}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <User className="w-4 h-4 text-slate-400" />
+                      {vendor.contact || <span className="text-slate-400 italic">{t('common.common.unassigned')}</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      {vendor.phone && (
+                        <div className="flex items-center gap-2 text-slate-600 text-xs">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          {vendor.phone}
+                        </div>
+                      )}
+                      {vendor.mobile && (
+                        <div className="flex items-center gap-2 text-slate-600 text-xs">
+                          <Smartphone className="w-3 h-3 text-slate-400" />
+                          {vendor.mobile}
+                        </div>
+                      )}
+                      {!vendor.phone && !vendor.mobile && <span className="text-slate-400 italic">-</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {vendor.email ? (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                        <span className="truncate max-w-[200px]" title={vendor.email}>{vendor.email}</span>
+                      </div>
+                    ) : <span className="text-slate-400 italic">-</span>}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-medium">
+                      <History className="w-3 h-3" />
+                      {vendor.records?.length || 0}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <Link 
+                        href={`/vendors/${vendor.id}`} 
+                        className="text-kst-blue hover:text-blue-700 font-bold tooltip-trigger"
+                        title={t('common.common.details')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+                      <form action={deleteVendorAction.bind(null, vendor.id)}>
+                        <button 
+                          className="text-slate-400 hover:text-red-500 font-bold tooltip-trigger"
+                          title={t('common.common.delete')}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {vendors.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center text-slate-400 font-medium bg-slate-50">
+                    <Building className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                    {t('quality.vendor.no_data')}
+                    <div className="mt-2">
+                      <Link href="/vendors/new" className="text-kst-blue font-bold hover:underline">
+                        {t('quality.vendor.add')}
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

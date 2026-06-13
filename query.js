@@ -2,11 +2,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.calibrationRecord.update({
-    where: { id: 'cmonnafos000ar275edc0m1v5' },
-    data: { status: 'PENDING' }
+  const stds = await prisma.acceptanceStandard.findMany({
+    include: { criteria: true }
   });
-  console.log('Fixed status to PENDING');
+  console.log(JSON.stringify(stds, null, 2));
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

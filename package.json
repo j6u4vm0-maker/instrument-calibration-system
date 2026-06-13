@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "start:scheduler": "npx tsx src/scheduler/dailyTask.ts",
     "dev": "next dev",
     "dev:network": "next dev -H 0.0.0.0",
     "build": "next build",
@@ -23,15 +24,18 @@
     "jose": "^6.2.3",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
+    "node-cron": "^4.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-i18next": "^17.0.6",
+    "tsx": "^4.22.4",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.5.0",

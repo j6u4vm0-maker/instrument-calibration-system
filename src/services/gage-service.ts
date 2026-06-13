@@ -519,7 +519,23 @@ export class GageService {
         custodianId = staff.id;
       }
 
-      // 4. Resolve Date fields
+      // 4. Resolve Manager
+      let managerId = null;
+      if (row.manager && departmentId) {
+        let staff = await prisma.staff.findFirst({ where: { name: row.manager, departmentId } });
+        if (!staff) staff = await prisma.staff.create({ data: { name: row.manager, departmentId } });
+        managerId = staff.id;
+      }
+
+      // 5. Resolve Vendor
+      let vendorId = null;
+      if (row.vendor) {
+        let vendor = await prisma.vendor.findFirst({ where: { name: row.vendor } });
+        if (!vendor) vendor = await prisma.vendor.create({ data: { name: row.vendor } });
+        vendorId = vendor.id;
+      }
+
+      // 6. Resolve Date fields
       const lastCalDate = row.lastCalDate ? new Date(row.lastCalDate) : new Date();
       const cycle = parseInt(row.calibrationCycle) || 12;
       const nextCalDate = row.nextCalDate ? new Date(row.nextCalDate) : CalibrationService.calculateNextCalDate(lastCalDate, cycle);
@@ -537,6 +553,8 @@ export class GageService {
         locationId: locationId,
         departmentId: departmentId,
         custodianId: custodianId,
+        managerId: managerId,
+        vendorId: vendorId,
         calType: row.calType || 'INTERNAL',
         calibrationCycle: cycle,
         lastCalDate: lastCalDate,

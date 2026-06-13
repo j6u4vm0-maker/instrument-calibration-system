@@ -88,12 +88,12 @@ export function StandardCriteriaEditor({
                 <input 
                   type="number" 
                   step="0.001"
-                  value={c.toleranceMinus}
+                  value={c.toleranceMinus === "" || c.toleranceMinus === "-" ? "" : Math.abs(parseFloat(c.toleranceMinus) || 0)}
                   onChange={(e) => onChange(idx, 'toleranceMinus', e.target.value)}
                   onBlur={(e) => {
                     if (precisionDecimals !== undefined && e.target.value) {
                       const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) onChange(idx, 'toleranceMinus', parseFloat(val.toFixed(precisionDecimals)));
+                      if (!isNaN(val)) onChange(idx, 'toleranceMinus', Math.abs(parseFloat(val.toFixed(precisionDecimals))));
                     }
                   }}
                   className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none text-red-600 font-bold"

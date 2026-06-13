@@ -12,6 +12,7 @@ interface CriteriaItem {
 interface PointItem {
   category: string;
   points: string;
+  unit?: string;
 }
 
 export function CriteriaTable({ text }: { text: string }) {
@@ -82,8 +83,17 @@ export function PointsTable({ text }: { text: string }) {
   const parsePoints = (input: string): PointItem[] => {
     if (!input) return [];
     return input.split('\n').filter(line => line.trim()).map(line => {
-      const [category, points] = line.split(':').map(s => s.trim());
-      return { category: category || "", points: points || line };
+      const [categoryStr, ...pointsParts] = line.split(':');
+      let category = (categoryStr || "").trim();
+      let points = pointsParts.join(':').trim() || line;
+      let unit = "";
+
+      const unitMatch = category.match(/^(.*?)\((.*?)\)$/);
+      if (unitMatch) {
+        category = unitMatch[1].trim();
+        unit = unitMatch[2].trim();
+      }
+      return { category, points, unit };
     });
   };
 
@@ -96,6 +106,7 @@ export function PointsTable({ text }: { text: string }) {
         <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
           <tr>
             <th className="px-3 py-2 border-b border-slate-100">{t('calibration.gage.category')}</th>
+            <th className="px-3 py-2 border-b border-slate-100 w-24">單位</th>
             <th className="px-3 py-2 border-b border-slate-100">{t('calibration.gage.points')}</th>
           </tr>
         </thead>
@@ -103,6 +114,7 @@ export function PointsTable({ text }: { text: string }) {
           {items.map((item, idx) => (
             <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
               <td className="px-3 py-2 font-bold text-slate-700 w-24">{item.category}</td>
+              <td className="px-3 py-2 font-bold text-slate-500 w-24">{item.unit || '-'}</td>
               <td className="px-3 py-2 font-mono text-slate-600 break-all">{item.points}</td>
             </tr>
           ))}
@@ -233,10 +245,17 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
   const parsePoints = (input: string): PointItem[] => {
     if (!input) return [];
     return input.split('\n').filter(line => line.trim()).map(line => {
-      const parts_colon = line.split(':');
-      const category = (parts_colon[0] || "").trim();
-      const points = (parts_colon[1] || "").trim();
-      return { category, points };
+      const [categoryStr, ...pointsParts] = line.split(':');
+      let category = (categoryStr || "").trim();
+      let points = pointsParts.join(':').trim();
+      let unit = "";
+
+      const unitMatch = category.match(/^(.*?)\((.*?)\)$/);
+      if (unitMatch) {
+        category = unitMatch[1].trim();
+        unit = unitMatch[2].trim();
+      }
+      return { category, points, unit };
     });
   };
 
@@ -244,9 +263,10 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
 
   const updateItems = (newItems: PointItem[]) => {
     const str = newItems.map(item => {
-      const cat = item.category;
-      const pts = item.points;
-      return `${cat}${pts ? ': ' + pts : ':'}`;
+      const cat = item.category.trim();
+      const unitStr = item.unit?.trim() ? `(${item.unit.trim()})` : '';
+      const pts = item.points.trim();
+      return `${cat}${unitStr}${pts ? ': ' + pts : ':'}`;
     }).join('\n');
     onChange(str);
   };
@@ -258,7 +278,7 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
   };
 
   const addRow = () => {
-    updateItems([...items, { category: "", points: "" }]);
+    updateItems([...items, { category: "", points: "", unit: "" }]);
   };
 
   const removeRow = (idx: number) => {
@@ -272,6 +292,7 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
           <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2.5 border-b border-slate-100 w-32">{t('calibration.gage.category')}</th>
+              <th className="px-3 py-2.5 border-b border-slate-100 w-24">單位</th>
               <th className="px-3 py-2.5 border-b border-slate-100">{t('calibration.gage.points')}</th>
               <th className="px-3 py-2.5 border-b border-slate-100 w-10"></th>
             </tr>
@@ -286,6 +307,15 @@ export function PointsEditor({ value, onChange }: { value: string, onChange: (va
                     onChange={(e) => handleChange(idx, 'category', e.target.value)}
                     placeholder="例如：外徑"
                     className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-700"
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <input 
+                    type="text" 
+                    value={item.unit || ""} 
+                    onChange={(e) => handleChange(idx, 'unit', e.target.value)}
+                    placeholder="例如：mm"
+                    className="w-full px-2 py-1 bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-kst-blue outline-none rounded transition-all font-bold text-slate-500"
                   />
                 </td>
                 <td className="px-2 py-1.5">
